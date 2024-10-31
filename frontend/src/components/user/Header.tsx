@@ -13,18 +13,18 @@ export default function Header() {
             {/* Nav Links */}
             <ul className="hidden md:flex px-4 mx-auto font-semibold font-heading space-x-12">
               <li>
-                <a className="hover:text-gray-200" href="#">
+                <a className="hover:text-gray-200" href="/">
                   Home
                 </a>
               </li>
               <li>
-                <a className="hover:text-gray-200" href="#">
-                  Category
+                <a className="hover:text-gray-200" href="/roll-call">
+                  Roll Call
                 </a>
               </li>
               <li>
-                <a className="hover:text-gray-200" href="#">
-                  Collections
+                <a className="hover:text-gray-200" href="/chat-web">
+                  Chat
                 </a>
               </li>
               <li>

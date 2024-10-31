@@ -1,0 +1,118 @@
+import { XMarkIcon, CheckIcon } from "@heroicons/react/24/solid";
+import React, { useEffect, useState } from "react";
+import { Tooltip } from "react-tooltip";
+
+type AttendanceStatus = {
+  absent: boolean;
+  date: string;
+  time?: string;
+  reason?: string;
+};
+
+interface AttendanceTableProps {
+  title: string;
+  days: AttendanceStatus[];
+}
+
+const AttendanceTable: React.FC<AttendanceTableProps> = ({ title, days }) => {
+  return (
+    <div className="border rounded-lg shadow-md p-4 w-[400px] h-[450px] bg-white">
+      <h2 className="text-xl font-semibold text-center mb-4">{title}</h2>
+      <div className="grid grid-rows-6 grid-cols-6 gap-2">
+        {days.map((day, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-center w-12 h-12 border rounded-md bg-gray-100 relative group"
+            data-tooltip-id={`tooltip-${index}`}
+            data-tooltip-content={
+              day.absent
+                ? `${day.date} - Nghỉ: ${day.reason}`
+                : `${day.date} - ${day.time}`
+            }
+          >
+            {day.absent ? (
+              <XMarkIcon className="w-6 h-6 text-red-500" />
+            ) : (
+              <CheckIcon className="w-6 h-6 text-green-500" />
+            )}
+          </div>
+        ))}
+      </div>
+      <h2 className="text-xl font-semibold text-center">Tổng lương: 5000$</h2>
+      {days.map((_, index) => (
+        <Tooltip key={index} id={`tooltip-${index}`} />
+      ))}
+    </div>
+  );
+};
+
+export default function Calendar() {
+  const [multiMonthData, setMultiMonthData] = useState<
+    { month: number; year: number; days: AttendanceStatus[] }[]
+  >([]);
+
+  const rawData: AttendanceStatus[] = [
+    { absent: false, date: "2024-10-01", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2024-10-02", time: "", reason: "Bận việc riêng" },
+    { absent: false, date: "2024-10-03", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2024-10-30", time: "", reason: "Có việc gia đình" },
+    { absent: true, date: "2024-10-31", time: "", reason: "Có việc gia đình" },
+    { absent: false, date: "2024-11-01", time: "8:00 - 17:00", reason: "" },
+    { absent: false, date: "2024-11-02", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2024-11-03", time: "", reason: "Ốm" },
+    { absent: false, date: "2024-11-04", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2024-11-05", time: "", reason: "Đi công tác" },
+    { absent: true, date: "2024-09-01", time: "", reason: "Đi công tác" },
+    { absent: true, date: "2024-08-01", time: "", reason: "Đi công tác" },
+  ];
+
+  const filterDataForMonth = (month: number, year: number) => {
+    return rawData.filter((day) => {
+      const date = new Date(day.date);
+      return date.getMonth() === month && date.getFullYear() === year;
+    });
+  };
+
+  useEffect(() => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    const updateDataForMultipleMonths = () => {
+      const monthsToShow = [];
+      for (let i = 0; i <= currentMonth; i++) {
+        const monthData = filterDataForMonth(i, currentYear);
+        if (monthData.length > 0) {
+          monthsToShow.push({ month: i, year: currentYear, days: monthData });
+        }
+      }
+      setMultiMonthData(monthsToShow);
+    };
+
+    updateDataForMultipleMonths();
+
+    const intervalId = setInterval(() => {
+      const newDate = new Date();
+      if (
+        newDate.getMonth() !== currentMonth ||
+        newDate.getFullYear() !== currentYear
+      ) {
+        updateDataForMultipleMonths();
+      }
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <div className="grid gap-4 p-8 mt-[100px] grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {multiMonthData.map((data, index) => (
+        <AttendanceTable
+          key={index}
+          title={`Tháng ${data.month + 1} / ${data.year}`}
+          days={data.days}
+        />
+      ))}
+    </div>
+  );
+}
