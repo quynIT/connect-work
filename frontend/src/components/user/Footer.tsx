@@ -16,7 +16,7 @@ export default function Footer() {
       itemType="http://schema.org/WPFooter"
     >
       <img
-        src="/public/logo.png"
+        src="/logo.png"
         alt="Image"
         style={{
           width: "80px",
