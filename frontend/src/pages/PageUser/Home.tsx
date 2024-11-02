@@ -23,7 +23,7 @@ export default function Home() {
   const seconds = String(currentTime.getSeconds()).padStart(2, "0");
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bgr-header mt-11">
+    <div className="flex flex-col items-center justify-center h-screen bgr-header pt-8">
       <div className="flex flex-row items-center justify-center space-x-10 w-[1200px]">
         <div className="w-[70%]">
           <h2 className="text-gray-700 text-3xl leading-relaxed">

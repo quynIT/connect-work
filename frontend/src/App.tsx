@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import LayoutUser from "./layouts/user/LayoutUser";
-import LayoutAdmin from "./layouts/user/LayoutAdmin";
+import LayoutAdmin from "./layouts/admin/LayoutAdmin";
 import { adminRoutes, routes } from "./routes";
 import "./App.css";
 function App() {
