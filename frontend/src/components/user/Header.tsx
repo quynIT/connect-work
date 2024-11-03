@@ -17,7 +17,7 @@ export default function Header() {
         if (currentTime - Number(storedTime) > 24 * 60 * 60 * 1000) {
           setNotification(null); // Ẩn thông báo
           localStorage.removeItem("notificationTime"); // Xóa thời gian lưu
-          clearInterval(interval); // Dừng kiểm tra
+          clearInterval(interval);
         }
       }
     }, 1000); // Kiểm tra mỗi giây
@@ -55,11 +55,6 @@ export default function Header() {
                   Task Board
                 </Link>
               </li>
-              <li>
-                <Link className="hover:text-gray-200" to="/notification-list">
-                  Notification
-                </Link>
-              </li>
             </ul>
             {/* Header Icons */}
             <div className="hidden xl:flex items-center space-x-5">
@@ -79,7 +74,10 @@ export default function Header() {
                   />
                 </svg>
               </a>
-              <a className="flex items-center hover:text-gray-200" href="#">
+              <Link
+                className="flex items-center hover:text-gray-200"
+                to="/notification-list"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24" // Thay đổi kích thước biểu tượng
@@ -94,7 +92,7 @@ export default function Header() {
                   <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-pink-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
                 </span>
-              </a>
+              </Link>
 
               {/* Sign In / Register */}
               <Link

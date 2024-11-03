@@ -5,8 +5,8 @@ import ChatWeb from "../pages/PageUser/ChatWeb";
 import Calendar from "../pages/PageUser/Calendar";
 import KanbanBoard from "../pages/PageUser/KanbanBoard";
 import AccountInfo from "../pages/PageUser/AccountInfo";
-import LoginAdmin from "../pages/PageAdmin/LoginAdmin";
 import NotificationList from "../pages/PageUser/NotificationList";
+import Login from "../pages/PageAdmin/Login";
 export const routes = [
   {
     path: "/",
@@ -44,6 +44,6 @@ export const adminRoutes = [
   },
   {
     path: "/admin/login-ad",
-    page: LoginAdmin,
+    page: Login,
   },
 ];
