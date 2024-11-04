@@ -1,4 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Itim&display=swap");
+* {
+  font-family: Inter, sans-serif;
+}
 .footer {
   padding: 40px 0;
   background-color: #0d1117;

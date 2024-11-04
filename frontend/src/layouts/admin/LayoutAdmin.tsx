@@ -6,61 +6,83 @@ import {
   BellIcon,
 } from "@heroicons/react/24/solid";
 import Logo from "/logo.png";
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
+
+type Link = "Dashboard" | "Profile" | "Sales Report";
 
 export default function LayoutAdmin() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [activeLink, setActiveLink] = useState<Link>("Dashboard");
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  const linkClasses = (linkName: Link): string =>
+    `flex items-center p-2 rounded-lg ${
+      activeLink === linkName ? "bg-[#a9dfd8] text-[#171821]" : "text-[#87888c]"
+    } hover:bg-[#a9dfd8] hover:text-[#171821]`;
 
   return (
-    <div className="flex h-screen bg-gray-900 text-gray-100">
+    <div
+      className="flex h-screen text-gray-100"
+      style={{ backgroundColor: "#171821" }}
+    >
       {/* Sidebar */}
       <div
         className={`${
           isSidebarOpen ? "w-[300px]" : "w-24"
-        } bg-gray-800 p-4 transition-all duration-300`}
+        } p-4 transition-all duration-300 border-r border-gray-700 fixed h-full`}
       >
-        <div className="flex">
+        <div className="flex items-center">
           <button
             className="text-gray-300 hover:text-white mb-6"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
-            <img src={Logo} className="w-9 h-9 mr-2" />
+            <img src={Logo} className="w-9 h-9 mr-2" alt="Logo" />
           </button>
-          <div className="text-2xl font-bold text-orange-500 mb-8 mt-1">
-            {isSidebarOpen && "Connect Work"}
-          </div>
+          {isSidebarOpen && (
+            <div className="text-3xl font-bold text-orange-500 mb-8 mt-1">
+              Connect Work
+            </div>
+          )}
         </div>
         <nav className="space-y-4">
-          <a
-            href="#"
-            className="flex items-center p-2 bg-gray-700 rounded-lg hover:bg-gray-700"
+          <Link
+            to="/admin"
+            className={linkClasses("Dashboard")}
+            onClick={() => setActiveLink("Dashboard")}
           >
             <HomeIcon className="w-6 h-6" />
             {isSidebarOpen && <span className="ml-2">Dashboard</span>}
-          </a>
-          <a
-            href="#"
-            className="flex items-center p-2 hover:bg-gray-700 rounded-lg"
+          </Link>
+          <Link
+            to="/admin/member-list"
+            className={linkClasses("Profile")}
+            onClick={() => setActiveLink("Profile")}
           >
             <UserCircleIcon className="w-6 h-6" />
             {isSidebarOpen && <span className="ml-2">Profile</span>}
-          </a>
-          <a
-            href="#"
-            className="flex items-center p-2 hover:bg-gray-700 rounded-lg"
+          </Link>
+          <Link
+            to="#"
+            className={linkClasses("Sales Report")}
+            onClick={() => setActiveLink("Sales Report")}
           >
             <ChartBarSquareIcon className="w-6 h-6" />
             {isSidebarOpen && <span className="ml-2">Sales Report</span>}
-          </a>
+          </Link>
         </nav>
       </div>
-      <div className="flex-1 p-6">
+
+      {/* Main Content */}
+      <div
+        className={`${
+          isSidebarOpen ? "ml-[300px]" : "ml-24"
+        } flex-1 overflow-auto`}
+      >
         {/* Navbar */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between w-full p-4 z-10">
           <input
             type="text"
-            className="w-1/2 p-2 rounded bg-gray-800 border border-gray-700 focus:outline-none"
+            className="w-3/5 p-3 rounded-xl bg-[#21222d] focus:outline-none"
             placeholder="Search here..."
           />
           <div className="flex items-center space-x-4 relative">
@@ -74,7 +96,7 @@ export default function LayoutAdmin() {
               className="w-12 h-12 rounded-full bg-gray-700 cursor-pointer"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              <img src={Logo} alt="Image" className="mt-1" />
+              <img src={Logo} alt="Avatar" className="mt-1" />
             </div>
             {isMenuOpen && (
               <div className="absolute right-0 mt-36 bg-gray-800 rounded-lg shadow-lg w-48 p-2">
@@ -94,7 +116,11 @@ export default function LayoutAdmin() {
             )}
           </div>
         </div>
-        <Outlet />
+
+        {/* Content Area */}
+        <div className="p-5">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
