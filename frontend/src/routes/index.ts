@@ -11,6 +11,7 @@ import MemberList from "../pages/PageAdmin/MemberList";
 import UserDetails from "../components/admin/UserDetails";
 import AddEmployee from "../components/admin/AddEmployee";
 import MgNotification from "../pages/PageAdmin/MgNotification";
+import MgAttendance from "../pages/PageAdmin/MgAttendance";
 export const routes = [
   {
     path: "/",
@@ -65,5 +66,9 @@ export const adminRoutes = [
   {
     path: "/admin/ql-notification",
     page: MgNotification,
+  },
+  {
+    path: "/admin/ql-attendance",
+    page: MgAttendance,
   },
 ];

@@ -4,11 +4,22 @@ import {
   UserCircleIcon,
   ChartBarSquareIcon,
   BellIcon,
+  CurrencyDollarIcon,
+  BriefcaseIcon,
+  HeartIcon,
 } from "@heroicons/react/24/solid";
 import Logo from "/logo.png";
 import { Link, Outlet } from "react-router-dom";
+import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 
-type Link = "Dashboard" | "Profile" | "Sales Report";
+type Link =
+  | "Dashboard"
+  | "Profile"
+  | "Manage Notification"
+  | "Attendance Management"
+  | "Salary Management"
+  | "Task Management"
+  | "Social Welfare Management";
 
 export default function LayoutAdmin() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
@@ -62,12 +73,48 @@ export default function LayoutAdmin() {
             {isSidebarOpen && <span className="ml-2">Profile</span>}
           </Link>
           <Link
-            to="#"
-            className={linkClasses("Sales Report")}
-            onClick={() => setActiveLink("Sales Report")}
+            to="/admin/ql-notification"
+            className={linkClasses("Manage Notification")}
+            onClick={() => setActiveLink("Manage Notification")}
           >
             <ChartBarSquareIcon className="w-6 h-6" />
-            {isSidebarOpen && <span className="ml-2">Sales Report</span>}
+            {isSidebarOpen && <span className="ml-2">Manage Notification</span>}
+          </Link>
+          <Link
+            to="/admin/attendance-management"
+            className={linkClasses("Attendance Management")}
+            onClick={() => setActiveLink("Attendance Management")}
+          >
+            <ClipboardDocumentCheckIcon className="w-6 h-6" />
+            {isSidebarOpen && (
+              <span className="ml-2">Attendance Management</span>
+            )}
+          </Link>
+          <Link
+            to="/admin/salary-management"
+            className={linkClasses("Salary Management")}
+            onClick={() => setActiveLink("Salary Management")}
+          >
+            <CurrencyDollarIcon className="w-6 h-6" />
+            {isSidebarOpen && <span className="ml-2">Salary Management</span>}
+          </Link>
+          <Link
+            to="/admin/task-management"
+            className={linkClasses("Task Management")}
+            onClick={() => setActiveLink("Task Management")}
+          >
+            <BriefcaseIcon className="w-6 h-6" />
+            {isSidebarOpen && <span className="ml-2">Task Management</span>}
+          </Link>
+          <Link
+            to="/admin/social-welfare-management"
+            className={linkClasses("Social Welfare Management")}
+            onClick={() => setActiveLink("Social Welfare Management")}
+          >
+            <HeartIcon className="w-6 h-6" />
+            {isSidebarOpen && (
+              <span className="ml-2">Social Welfare Management</span>
+            )}
           </Link>
         </nav>
       </div>

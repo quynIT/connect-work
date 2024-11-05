@@ -1,4 +1,4 @@
-import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -36,7 +36,7 @@ export default function MgNotification() {
   const [formData, setFormData] = useState<FormData>({
     title: "",
     content: "",
-    time: "",
+    time: new Date().toLocaleString(), // Lấy thời gian hiện tại
   });
 
   const handleAddNotificationClick = () => {
@@ -51,15 +51,7 @@ export default function MgNotification() {
 
   const handleCloseForm = () => {
     setFormVisible(false); // Đóng form
-    setFormData({ title: "", content: "", time: "" }); // Đặt lại dữ liệu form
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const currentTime = new Date().toLocaleString(); // Lấy thời gian hiện tại
-    const newFormData = { ...formData, time: currentTime }; // Cập nhật thời gian vào dữ liệu form
-    console.log(newFormData); // Có thể xử lý gửi dữ liệu ở đây
-    handleCloseForm(); // Đóng form sau khi gửi
+    setFormData({ title: "", content: "", time: new Date().toLocaleString() }); // Reset form
   };
 
   return (
@@ -81,15 +73,15 @@ export default function MgNotification() {
 
       {isFormVisible && (
         <div className="notification-form fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg relative">
+          <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-1/3 h-auto relative">
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-200"
               onClick={handleCloseForm}
+              className="absolute top-2 right-4 text-gray-400 hover:text-white text-5xl"
             >
-              &times; {/* Biểu tượng X */}
+              &times;
             </button>
             <h2 className="text-lg font-bold mb-4">Create Notification</h2>
-            <form onSubmit={handleSubmit}>
+            <form>
               <div className="mb-4">
                 <label className="block text-gray-300" htmlFor="title">
                   Title
@@ -128,7 +120,6 @@ export default function MgNotification() {
                   value={formData.time}
                   readOnly // Không cho phép chỉnh sửa
                   className="w-full p-2 rounded bg-gray-700 text-gray-300 border-none focus:outline-none"
-                  placeholder="Enter time"
                 />
               </div>
               <button
@@ -167,10 +158,6 @@ export default function MgNotification() {
                 <td className="p-3 text-gray-300">{member.content}</td>
                 <td className="p-3 text-gray-300">{member.joined}</td>
                 <td className="p-3 flex space-x-3">
-                  <EyeIcon
-                    className="w-5 h-5 text-blue-400 hover:text-blue-300 cursor-pointer"
-                    onClick={() => navigate("/admin/user-details")}
-                  />
                   <PencilIcon
                     className="w-5 h-5 text-yellow-400 hover:text-yellow-300 cursor-pointer"
                     onClick={() => navigate("/your-edit-path")}
