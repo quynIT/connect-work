@@ -81,7 +81,7 @@ export default function LayoutAdmin() {
             {isSidebarOpen && <span className="ml-2">Manage Notification</span>}
           </Link>
           <Link
-            to="/admin/attendance-management"
+            to="/admin/ql-attendance"
             className={linkClasses("Attendance Management")}
             onClick={() => setActiveLink("Attendance Management")}
           >
@@ -91,7 +91,7 @@ export default function LayoutAdmin() {
             )}
           </Link>
           <Link
-            to="/admin/salary-management"
+            to="/admin/ql-salary"
             className={linkClasses("Salary Management")}
             onClick={() => setActiveLink("Salary Management")}
           >
