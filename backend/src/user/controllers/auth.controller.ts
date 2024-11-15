@@ -17,10 +17,10 @@ export class AuthController {
     return await this.authService.login(loginUserDto);
   }
 
-  //   @Post('refresh')
-  //   async refresh(@Body() body) {
-  //     return await this.authService.refresh(body.refresh_token);
-  //   }
+  @Post('refresh')
+  async refresh(@Body() body) {
+    return await this.authService.refresh(body.refresh_token);
+  }
 
   @UseGuards(AuthGuard())
   @Post('logout')

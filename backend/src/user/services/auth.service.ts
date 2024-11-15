@@ -98,24 +98,24 @@ export class AuthService {
     }
   }
 
-  //   async refresh(refresh_token) {
-  //     try {
-  //       const payload = await this.jwtService.verify(refresh_token, {
-  //         secret: process.env.SECRETKEY_REFRESH,
-  //       });
-  //       const user = await this.userService.getUserByRefresh(
-  //         refresh_token,
-  //         payload.email,
-  //       );
-  //       const token = await this._createToken(user, true, false);
-  //       return {
-  //         email: user.email,
-  //         ...token,
-  //       };
-  //     } catch (e) {
-  //       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
-  //     }
-  //   }
+  async refresh(refresh_token) {
+    try {
+      const payload = await this.jwtService.verify(refresh_token, {
+        secret: process.env.SECRETKEY_REFRESH,
+      });
+      const user = await this.userService.getUserByRefresh(
+        refresh_token,
+        payload.email,
+      );
+      const token = await this._createToken(user, true, false);
+      return {
+        email: user.email,
+        ...token,
+      };
+    } catch (e) {
+      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+    }
+  }
 
   async logout(user: User) {
     await this.userService.update(
