@@ -7,7 +7,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import * as dotenv from 'dotenv';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { join } from 'path';
 dotenv.config();
 @Module({
   imports: [
