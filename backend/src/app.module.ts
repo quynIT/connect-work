@@ -33,6 +33,12 @@ dotenv.config();
       }),
       inject: [ConfigService],
     }),
+    // BullModule.forRoot({
+    //   redis: {
+    //     host: 'localhost',
+    //     port: 6379,
+    //   },
+    // }),
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 
 export default function Header() {
   const [notification, setNotification] = useState<string | null>("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const toggleMenu = () => {
+    setIsMenuOpen((prev) => !prev);
+  };
   useEffect(() => {
     // Lưu thời gian thông báo được hiển thị
     const showTime = new Date().getTime();
@@ -97,7 +101,8 @@ export default function Header() {
               {/* Sign In / Register */}
               <Link
                 className="flex items-center hover:text-gray-200"
-                to="/account-info"
+                to="#"
+                onClick={toggleMenu} // Toggle menu khi click vào icon
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -114,6 +119,28 @@ export default function Header() {
                   />
                 </svg>
               </Link>
+
+              {/* Menu hiện ra khi isMenuOpen là true */}
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-40 bg-gray-800 rounded-lg shadow-lg w-48 p-2">
+                  <Link
+                    to="/account-info"
+                    className="block px-4 py-2 text-gray-200 hover:bg-gray-700"
+                  >
+                    Account Settings
+                  </Link>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 text-gray-200 hover:bg-gray-700"
+                    onClick={() => {
+                      // Logic logout tại đây
+                      console.log("Logout");
+                    }}
+                  >
+                    Logout
+                  </a>
+                </div>
+              )}
             </div>
           </div>
           {/* Responsive navbar */}
@@ -156,8 +183,6 @@ export default function Header() {
         </nav>
       </section>
 
-      {/* Thông báo */}
-      {/* Thông báo */}
       {notification && (
         <div className="bg-red-500 text-white h-[60px] w-full flex justify-center text-4xl mt-20 sticky top-0">
           <div className="marquee">

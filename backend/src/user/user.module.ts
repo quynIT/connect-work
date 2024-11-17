@@ -11,6 +11,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserController } from './controllers/user.controler';
 import * as dotenv from 'dotenv';
+import { BullModule } from '@nestjs/bull';
 dotenv.config();
 @Module({
   imports: [
@@ -35,6 +36,9 @@ dotenv.config();
         },
       }),
       inject: [ConfigService],
+    }),
+    BullModule.registerQueue({
+      name: 'send-mail',
     }),
   ],
   controllers: [AuthController, UserController],
