@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome Email</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+
+      .email-container {
+        background-color: #ffffff;
+        width: 90%;
+        max-width: 600px;
+        margin: 30px auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+      }
+
+      .header {
+        background-color: #4285f4;
+        color: #ffffff;
+        text-align: center;
+        padding: 20px;
+        border-bottom: 5px solid #316ac5;
+      }
+
+      .header h1 {
+        margin: 10px 0;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .content p {
+        margin: 10px 0;
+        font-size: 16px;
+        color: #333333;
+        line-height: 1.6;
+      }
+
+      .congratulations-container {
+        display: flex;
+        align-items: center;
+        background-color: #e8f5e9; /* Xanh nhạt */
+        border: 2px solid #81c784; /* Xanh lá nổi bật */
+        border-radius: 8px;
+        padding: 15px 20px;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .congratulations-container h2 {
+        font-size: 24px;
+        color: #388e3c; /* Màu xanh lá đậm */
+        margin: 0;
+        margin-right: 15px;
+      }
+
+      .congratulations-container p {
+        font-size: 16px;
+        color: #2e7d32; /* Xanh mềm mại */
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      .info-table-container {
+        margin-top: 20px;
+      }
+
+      .info-table-container h3 {
+        font-size: 20px;
+        color: #555555;
+        margin-bottom: 10px;
+      }
+
+      .info-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #ffffff;
+        margin: 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .info-table th,
+      .info-table td {
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .info-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+        color: #333333;
+      }
+
+      .info-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+
+      .info-table td {
+        color: #555555;
+      }
+
+      .footer {
+        background-color: #f7f7f7;
+        text-align: center;
+        padding: 15px;
+        font-size: 14px;
+        color: #666666;
+        border-top: 5px solid #e0e0e0;
+      }
+
+      .footer h2 {
+        margin: 10px 0;
+        color: #f15151;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Header Section -->
+      <div class="header">
+        <h1>Chào mừng đến với Connect Work!</h1>
+      </div>
+
+      <!-- Content Section -->
+      <div class="content">
+        <p>Xin chào <b>{{name}}</b>,</p>
+        <div class="congratulations-container">
+          <h2>🎉Chúc mừng!</h2>
+          <p>
+            Bạn đã chính thức trở thành thành viên của
+            <strong>Connect Work</strong>. Chúng tôi rất vui khi có bạn đồng
+            hành trên hành trình này!
+          </p>
+        </div>
+
+        <!-- Thông tin thành viên -->
+        <div class="info-table-container">
+          <h3>Thông tin tài khoản của bạn</h3>
+          <table class="info-table">
+            <tr>
+              <th>Thông tin</th>
+              <th>Chi tiết</th>
+            </tr>
+            <tr>
+              <td>Mật khẩu</td>
+              <td>{{password}}</td>
+            </tr>
+            <tr>
+              <td>Tên đăng nhập</td>
+              <td>{{username}}</td>
+            </tr>
+            <tr>
+              <td>Số điện thoại</td>
+              <td>{{phone}}</td>
+            </tr>
+            <tr>
+              <td>Salary</td>
+              <td>{{salary}}</td>
+            </tr>
+            <tr>
+              <td>Gender</td>
+              <td>{{gender}}</td>
+            </tr>
+            <tr>
+              <td>Số ngân hàng</td>
+              <td>{{stk}}</td>
+            </tr>
+            <tr>
+              <td>Address</td>
+              <td>{{address}}</td>
+            </tr>
+            <tr>
+              <td>Position</td>
+              <td>{{position}}</td>
+            </tr>
+            <tr>
+              <td>Birth Date</td>
+              <td>{{bithdate}}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Footer Section -->
+      <div class="footer">
+        <h2>CONNECT WORK</h2>
+        <p>Cảm ơn bạn đã trở thành một phần của công ty chúng tôi!</p>
+      </div>
+    </div>
+  </body>
+</html>

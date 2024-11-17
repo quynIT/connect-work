@@ -2,12 +2,19 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserRepository } from '../repositories/user.repository';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto, LoginUserDto } from '../dto/user.dto';
+import { MailerService } from '@nestjs-modules/mailer';
+import * as path from 'path';
+import { promises as fs } from 'fs';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private mailerService: MailerService,
+  ) {}
 
   async create(userDto: CreateUserDto) {
+    const rawPassword = userDto.password;
     userDto.password = await bcrypt.hash(userDto.password, 10);
 
     // check exists
@@ -27,18 +34,59 @@ export class UserService {
     //     removeOnComplete: true,
     //   },
     // );
-    // await this.mailerService.sendMail({
-    //   to: userDto.email,
-    //   subject: 'Welcome to my website',
-    //   template: './welcome',
-    //   context: {
-    //     name: userDto.name,
-    //   },
-    // });
+    await this.sendEmail(userDto.email, 'Welcome to my website', 'welcome', {
+      name: userDto.name,
+      phone: userDto.phone,
+      password: rawPassword,
+      username: userDto.username,
+      salary: userDto.salary,
+      gender: userDto.gender,
+      address: userDto.address,
+      stk: userDto.stk,
+      position: userDto.position,
+      bithdate: userDto.bithdate,
+    });
 
     return await this.userRepository.create(userDto);
   }
+  async readTemplate(
+    templateName: string,
+    variables: Record<string, string>,
+  ): Promise<string> {
+    const templatePath = path.join(
+      process.cwd(),
+      'src/templates/email',
+      `${templateName}.html`,
+    );
 
+    // Đọc file template và trả về nội dung của nó như một chuỗi
+    let template = await fs.readFile(templatePath, 'utf-8');
+
+    // Thay thế các placeholder bằng các giá trị thực tế
+    for (const [key, value] of Object.entries(variables)) {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      template = template.replace(regex, value);
+    }
+
+    return template;
+  }
+
+  // Gửi email
+  async sendEmail(
+    to: string,
+    subject: string,
+    templateName: string,
+    variables: Record<string, string> = {},
+  ) {
+    const emailContent = await this.readTemplate(templateName, variables);
+
+    await this.mailerService.sendMail({
+      to,
+      from: '"Connect Work" <trungquyen2902@gmail.com>',
+      subject,
+      html: emailContent,
+    });
+  }
   //   async setTwoFactorAuthenticationSecret(secret, user_id) {
   //     return this.userRepository.findByIdAndUpdate(user_id, {
   //       twoFactorAuthenticationSecret: secret,
