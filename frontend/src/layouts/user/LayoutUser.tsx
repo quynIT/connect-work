@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import Header from "../../components/user/Header";
 import Footer from "../../components/user/Footer";
-import { AuthContext } from "../../auth/AuthContext"; // Import đúng từ AuthContext
+import { AuthContext } from "../../auth/AuthContext";
 
 export default function LayoutUser() {
   const context = useContext(AuthContext); // Lấy context

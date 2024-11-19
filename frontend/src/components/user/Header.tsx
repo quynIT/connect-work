@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 
 export default function Header() {
+  const { logout } = useAuth();
+  const handleLogout = () => {
+    logout(); // Gọi hàm logout từ context
+  };
   const [notification, setNotification] = useState<string | null>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const toggleMenu = () => {
@@ -132,10 +137,7 @@ export default function Header() {
                   <a
                     href="#"
                     className="block px-4 py-2 text-gray-200 hover:bg-gray-700"
-                    onClick={() => {
-                      // Logic logout tại đây
-                      console.log("Logout");
-                    }}
+                    onClick={() => handleLogout()}
                   >
                     Logout
                   </a>

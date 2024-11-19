@@ -1,4 +1,5 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
+import axios from "axios";
 import {
   FaUser,
   FaEnvelope,
@@ -23,7 +24,7 @@ function AddEmployee() {
   const [position, setPosition] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bankAccount, setBankAccount] = useState("");
-
+  const [gender, setGender] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -40,84 +41,69 @@ function AddEmployee() {
   }, [email]);
 
   const generateRandomPassword = () => {
-    const randomPassword = Math.random().toString(36).slice(-8);
-    setPassword(randomPassword);
+    const randomPassword = Math.random().toString(36).slice(-8); // tạo mật khẩu ngẫu nhiên có độ dài 8 ký tự
+    setPassword(randomPassword); // Gán giá trị mật khẩu cho state
   };
-  const isValidAge = (dob: string): boolean => {
-    const birthDate = new Date(dob);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const monthDifference = today.getMonth() - birthDate.getMonth();
 
-    // Kiểm tra nếu người dùng đủ 18 tuổi
-    return (
-      age > 18 ||
-      (age === 18 && monthDifference > 0) ||
-      (age === 18 &&
-        monthDifference === 0 &&
-        today.getDate() >= birthDate.getDate())
-    );
-  };
+  // useEffect để tự động cập nhật tên đăng nhập và mật khẩu khi email thay đổi
+  useEffect(() => {
+    if (email) {
+      // Chỉ chạy khi email có giá trị
+      const usernameFromEmail = email.split("@")[0];
+      setUsername(usernameFromEmail); // Đặt tên đăng nhập từ phần đầu của email
+
+      if (!password) {
+        // Nếu mật khẩu chưa được tạo
+        generateRandomPassword(); // Tạo mật khẩu ngẫu nhiên
+      }
+    }
+  }, [email, password]);
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-
-    // Validate email
-    if (!email) {
-      newErrors.email = "Email là bắt buộc";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email không hợp lệ";
-    }
-
-    // Validate username
-    if (!username) {
-      newErrors.username = "Tên đăng nhập là bắt buộc";
-    }
-
-    // Validate phone number
-    if (!phone) {
-      newErrors.phone = "Số điện thoại là bắt buộc";
-    } else if (!/^\d{10}$/.test(phone)) {
-      newErrors.phone = "Số điện thoại phải có 10 chữ số";
-    }
-
-    // Validate salary
-    if (!salary) {
-      newErrors.salary = "Lương là bắt buộc";
-    } else if (isNaN(Number(salary))) {
-      newErrors.salary = "Lương phải là một số";
-    }
-
-    // Validate address
-    if (!address) {
-      newErrors.address = "Địa chỉ là bắt buộc";
-    }
-
-    // Validate position
-    if (!position) {
-      newErrors.position = "Chức vụ là bắt buộc";
-    }
-
-    // Validate bank account
-    if (!bankAccount) {
+    if (!email) newErrors.email = "Email là bắt buộc";
+    if (!username) newErrors.username = "Tên đăng nhập là bắt buộc";
+    if (!phone) newErrors.phone = "Số điện thoại là bắt buộc";
+    if (!salary) newErrors.salary = "Lương là bắt buộc";
+    if (!address) newErrors.address = "Địa chỉ là bắt buộc";
+    if (!position) newErrors.position = "Chức vụ là bắt buộc";
+    if (!bankAccount)
       newErrors.bankAccount = "Số tài khoản ngân hàng là bắt buộc";
-    }
-
-    // Validate date of birth
-    if (!dateOfBirth) {
-      newErrors.dateOfBirth = "Ngày sinh là bắt buộc";
-    } else if (!isValidAge(dateOfBirth)) {
-      newErrors.dateOfBirth = "Người dùng phải trên 18 tuổi";
-    }
-
+    if (!dateOfBirth) newErrors.dateOfBirth = "Ngày sinh là bắt buộc";
+    if (!gender) newErrors.gender = "Giới tính là bắt buộc";
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // Nếu không có lỗi thì trả về true
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (validateForm()) {
-      // Xử lý thêm nhân viên
-      console.log("Form is valid, submitting...");
+      try {
+        const formData = {
+          email,
+          password,
+          username,
+          phone,
+          salary,
+          gender,
+          stk: bankAccount,
+          address,
+          position,
+          avt: "logi.jpg", // Tạm thời dùng tên file tĩnh
+          name: username,
+          bithdate: dateOfBirth,
+        };
+
+        const response = await axios.post(
+          "http://localhost:3000/auth/register",
+          formData
+        );
+        alert("Thêm nhân viên thành công!");
+        console.log(response.data);
+      } catch (error) {
+        console.error("Đã xảy ra lỗi khi thêm nhân viên:", error);
+        alert("Thêm nhân viên thất bại. Vui lòng thử lại.");
+      }
     }
   };
 
@@ -128,7 +114,7 @@ function AddEmployee() {
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
         onSubmit={handleSubmit}
       >
-        {/* Left Column */}
+        {/* Email */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
             <FaEnvelope className="w-5 h-5 text-blue-400" />
@@ -142,6 +128,7 @@ function AddEmployee() {
           </div>
           {errors.email && <p className="text-red-500">{errors.email}</p>}
 
+          {/* Username */}
           <div className="flex items-center space-x-2">
             <FaUser className="w-5 h-5 text-blue-400" />
             <input
@@ -154,34 +141,15 @@ function AddEmployee() {
           </div>
           {errors.username && <p className="text-red-500">{errors.username}</p>}
 
-          <div className="flex items-center space-x-2">
-            <FaPhone className="w-5 h-5 text-blue-400" />
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Số điện thoại"
-              className="bg-[#171821] text-white w-full p-2 rounded-xl"
-            />
-          </div>
-          {errors.phone && <p className="text-red-500">{errors.phone}</p>}
-
-          <div className="flex items-center space-x-2">
-            <FaDollarSign className="w-5 h-5 text-blue-400" />
-            <input
-              type="text"
-              value={salary}
-              onChange={(e) => setSalary(e.target.value)}
-              placeholder="Lương"
-              className="bg-[#171821] text-white w-full p-2 rounded-xl"
-            />
-          </div>
-          {errors.salary && <p className="text-red-500">{errors.salary}</p>}
-
+          {/* Gender */}
           <div className="flex items-center space-x-2">
             <FaVenusMars className="w-5 h-5 text-blue-400" />
-            <select className="bg-[#171821] text-white w-full p-2 rounded-xl">
-              <option value="" disabled selected>
+            <select
+              className="bg-[#171821] text-white w-full p-2 rounded-xl"
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+            >
+              <option value="" disabled>
                 Giới tính
               </option>
               <option value="male">Nam</option>
@@ -189,20 +157,60 @@ function AddEmployee() {
               <option value="other">Khác</option>
             </select>
           </div>
-
+          {errors.gender && <p className="text-red-500">{errors.gender}</p>}
+          {/* Lương */}
           <div className="flex items-center space-x-2">
-            <FaUserClock className="w-5 h-5 text-blue-400" />
+            <FaDollarSign className="w-5 h-5 text-blue-400" />
             <input
-              type="date"
-              value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
+              type="number"
+              value={salary}
+              onChange={(e) => setSalary(e.target.value)}
+              placeholder="Lương"
               className="bg-[#171821] text-white w-full p-2 rounded-xl"
             />
           </div>
-          {errors.dateOfBirth && (
-            <p className="text-red-500">{errors.dateOfBirth}</p>
-          )}
+          {errors.salary && <p className="text-red-500">{errors.salary}</p>}
+          {/* Địa chỉ */}
+          <div className="flex items-center space-x-2">
+            <FaHome className="w-5 h-5 text-blue-400" />
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Địa chỉ"
+              className="bg-[#171821] text-white w-full p-2 rounded-xl"
+            />
+          </div>
+          {errors.address && <p className="text-red-500">{errors.address}</p>}
+          {/* Chức vụ */}
+          <div className="flex items-center space-x-2">
+            <FaUserClock className="w-5 h-5 text-blue-400" />
+            <input
+              type="text"
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              placeholder="Chức vụ"
+              className="bg-[#171821] text-white w-full p-2 rounded-xl"
+            />
+          </div>
+          {errors.position && <p className="text-red-500">{errors.position}</p>}
+        </div>
 
+        {/* Thông tin khác */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <FaUser className="w-5 h-5 text-blue-400" />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mật khẩu"
+              className="bg-[#171821] text-white w-full p-2 rounded-xl"
+            />
+          </div>
+          {errors.password && <p className="text-red-500">{errors.password}</p>}
+
+          {/* Số tài khoản ngân hàng */}
           <div className="flex items-center space-x-2">
             <FaMoneyCheckAlt className="w-5 h-5 text-blue-400" />
             <input
@@ -217,75 +225,56 @@ function AddEmployee() {
             <p className="text-red-500">{errors.bankAccount}</p>
           )}
 
+          {/* Ảnh đại diện */}
           <div className="flex items-center space-x-2">
-            <FaUser className="w-5 h-5 text-blue-400" />
+            <FaCamera className="w-5 h-5 text-blue-400" />
             <input
-              type="text"
-              value={password}
-              placeholder="Mật khẩu"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
               className="bg-[#171821] text-white w-full p-2 rounded-xl"
-              readOnly
             />
-            <button
-              type="button"
-              onClick={generateRandomPassword}
-              className="bg-blue-500 text-white px-4 rounded-xl ml-2"
-            >
-              Tạo Mật Khẩu
-            </button>
           </div>
+          {image && (
+            <div className="mt-4">
+              <img
+                src={image}
+                alt="Ảnh đại diện"
+                className="w-20 h-20 rounded-full object-cover"
+              />
+            </div>
+          )}
         </div>
-
-        {/* Right Column */}
         <div className="space-y-4">
+          {/* Số điện thoại */}
           <div className="flex items-center space-x-2">
-            <FaHome className="w-5 h-5 text-blue-400" />
+            <FaPhone className="w-5 h-5 text-blue-400" />
             <input
               type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Địa chỉ"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Số điện thoại"
               className="bg-[#171821] text-white w-full p-2 rounded-xl"
             />
           </div>
-          {errors.address && <p className="text-red-500">{errors.address}</p>}
+          {errors.phone && <p className="text-red-500">{errors.phone}</p>}
 
+          {/* Ngày sinh */}
           <div className="flex items-center space-x-2">
             <FaCalendarAlt className="w-5 h-5 text-blue-400" />
             <input
-              type="text"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              placeholder="Chức vụ"
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
               className="bg-[#171821] text-white w-full p-2 rounded-xl"
             />
           </div>
-          {errors.position && <p className="text-red-500">{errors.position}</p>}
-
-          <div className="flex items-center space-x-2">
-            <label className="flex items-center justify-center bg-[#171821] w-full h-full rounded-xl cursor-pointer">
-              {image ? (
-                <img
-                  src={image}
-                  alt="Preview"
-                  className="max-h-[260px] w-full object-cover rounded-lg"
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center border-2 border-dashed border-blue-400 rounded-lg">
-                  <FaCamera className="text-blue-400 w-[100px] h-[100px] m-[78px]" />
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden" // Ẩn input file
-              />
-            </label>
-          </div>
+          {errors.dateOfBirth && (
+            <p className="text-red-500">{errors.dateOfBirth}</p>
+          )}
         </div>
 
-        {/* Submit Button */}
+        {/* Submit */}
         <div className="col-span-full mt-6 flex justify-center">
           <button
             type="submit"
