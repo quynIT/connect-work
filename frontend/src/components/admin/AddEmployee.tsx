@@ -16,6 +16,7 @@ import {
 function AddEmployee() {
   const [image, setImage] = useState<string | null>(null);
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
@@ -63,6 +64,7 @@ function AddEmployee() {
     const newErrors: { [key: string]: string } = {};
     if (!email) newErrors.email = "Email là bắt buộc";
     if (!username) newErrors.username = "Tên đăng nhập là bắt buộc";
+    if (!name) newErrors.name = "Tên là bắt buộc";
     if (!phone) newErrors.phone = "Số điện thoại là bắt buộc";
     if (!salary) newErrors.salary = "Lương là bắt buộc";
     if (!address) newErrors.address = "Địa chỉ là bắt buộc";
@@ -89,8 +91,8 @@ function AddEmployee() {
           stk: bankAccount,
           address,
           position,
-          avt: "logi.jpg", // Tạm thời dùng tên file tĩnh
-          name: username,
+          avt: image || "avt.jpg", // Tạm thời dùng tên file tĩnh
+          name,
           bithdate: dateOfBirth,
         };
 
@@ -140,7 +142,18 @@ function AddEmployee() {
             />
           </div>
           {errors.username && <p className="text-red-500">{errors.username}</p>}
-
+          {/* Input cho name */}
+          <div className="flex items-center space-x-2">
+            <FaUser className="w-5 h-5 text-blue-400" />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Tên đầy đủ"
+              className="bg-[#171821] text-white w-full p-2 rounded-xl"
+            />
+          </div>
+          {errors.name && <p className="text-red-500">{errors.name}</p>}
           {/* Gender */}
           <div className="flex items-center space-x-2">
             <FaVenusMars className="w-5 h-5 text-blue-400" />
