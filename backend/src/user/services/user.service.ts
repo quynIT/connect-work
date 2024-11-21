@@ -1,3 +1,4 @@
+import { User } from './../models/user.model';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserRepository } from '../repositories/user.repository';
 import * as bcrypt from 'bcrypt';
@@ -149,5 +150,43 @@ export class UserService {
 
   private reverse(s) {
     return s.split('').reverse().join('');
+  }
+  async getAllUsers() {
+    return await this.userRepository.findAll();
+  }
+  async updateUserById(
+    id: string,
+    updateData: Partial<User>,
+  ): Promise<User | null> {
+    return await this.userRepository.findByIdAndUpdate(id, updateData);
+  }
+  async deleteUserById(id: string): Promise<any> {
+    return await this.userRepository.deleteOne(id);
+  }
+  async changeUserPassword(
+    id: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<any> {
+    // Tìm người dùng theo ID
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new HttpException(
+        'Old password is incorrect',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Mã hóa và cập nhật mật khẩu mới
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    return await this.userRepository.findByIdAndUpdate(id, {
+      password: hashedPassword,
+    });
   }
 }

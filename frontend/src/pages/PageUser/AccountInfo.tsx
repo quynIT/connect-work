@@ -27,6 +27,7 @@ interface UserInfo {
   salary: string;
   stk: string;
   password: string;
+  _id?: string;
 }
 
 interface Errors {
@@ -116,14 +117,18 @@ const AccountInfo: React.FC = () => {
   const handleSave = async () => {
     if (validate()) {
       try {
-        const accessToken = "your_access_token_here"; // Thay bằng accessToken thực tế
+        const accessToken = localStorage.getItem("accessToken"); // Thay bằng accessToken thực tế
+        const userId = userInfo._id; // Giả sử 'username' là id của người dùng, thay bằng id thực tế
+
         const response = await axios.put(
-          "http://localhost:3000/user/profile",
+          `http://localhost:3000/user/${userId}`, // Cập nhật với API sử dụng id người dùng
           userInfo,
           {
             headers: { Authorization: `Bearer ${accessToken}` },
           }
         );
+
+        console.log(response.data); // Log dữ liệu trả về từ API
         alert("Cập nhật thông tin thành công!");
         setIsEditing(false);
       } catch (error) {
