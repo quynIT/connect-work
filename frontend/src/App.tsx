@@ -5,6 +5,7 @@ import "./App.css";
 import LayoutAdmin from "./layouts/admin/LayoutAdmin";
 import { AuthProvider } from "./auth/AuthContext";
 import LoginUser from "./pages/PageUser/LoginUser";
+import TestDB from "./pages/testdb";
 function App() {
   return (
     <AuthProvider>
@@ -26,6 +27,7 @@ function App() {
             )}
           </Route>
           <Route path="/login" element={<LoginUser />} />
+          <Route path="/testdb" element={<TestDB />} />
           {/* Route for client */}
           <Route path="/" element={<LayoutUser />}>
             {routes.map(
