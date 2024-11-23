@@ -13,7 +13,6 @@ export const login = async (username: string, password: string) => {
       email: username,
       password,
     });
-
     // Lưu accessToken và refreshToken vào localStorage hoặc cookie
     const { accessToken, refreshToken, expiresIn } = response.data;
 
@@ -22,9 +21,9 @@ export const login = async (username: string, password: string) => {
     localStorage.setItem("refreshToken", refreshToken);
 
     // Cập nhật thời gian hết hạn của token
-    const expiresAt = new Date().getTime() + expiresIn * 1000;
+    const expiresAt = new Date().getTime() + parseInt(expiresIn);
     localStorage.setItem("expiresAt", expiresAt.toString());
-
+    console.log("Thời gian hết hạn", expiresAt.toString());
     return response.data; // Trả về dữ liệu để có thể xử lý thêm (ví dụ: thông tin người dùng)
   } catch (error) {
     console.error("Login failed:", error.response?.data?.message || error);
@@ -59,31 +58,37 @@ export const getUserProfile = async () => {
 
 // Hàm làm mới token (dùng refreshToken)
 export const refreshAccessToken = async () => {
+  const refreshToken = localStorage.getItem("refreshToken");
+  console.log("Refresh token", refreshToken); // Log refreshToken để kiểm tra
+
+  if (!refreshToken) {
+    throw new Error("No refresh token found");
+  }
+
   try {
-    const refreshToken = localStorage.getItem("refreshToken");
+    // Gửi yêu cầu POST đến backend với refresh_token trong body
+    const response = await api.post("/auth/refresh", {
+      refresh_token: refreshToken, // Gửi refresh_token trong body theo đúng cấu trúc backend yêu cầu
+    });
 
-    if (!refreshToken) {
-      throw new Error("No refresh token found");
-    }
-
-    const response = await api.post("/auth/refresh", { refreshToken });
-
+    // Nhận token mới từ phản hồi
     const { accessToken, expiresIn } = response.data;
+    console.log("Token mới", accessToken);
 
-    // Lưu lại accessToken mới
+    // Lưu accessToken mới vào localStorage
     localStorage.setItem("accessToken", accessToken);
 
-    // Cập nhật thời gian hết hạn của token
-    const expiresAt = new Date().getTime() + expiresIn * 1000;
+    // Tính toán và lưu thời gian hết hạn của token
+    const expiresAt = new Date().getTime() + expiresIn;
     localStorage.setItem("expiresAt", expiresAt.toString());
 
-    return accessToken;
+    return accessToken; // Trả về accessToken mới
   } catch (error) {
     console.error(
-      "Failed to refresh access token:",
+      "Error refreshing access token:",
       error.response?.data?.message || error
     );
-    throw error;
+    throw error; // Nếu có lỗi, ném lại lỗi
   }
 };
 
@@ -93,4 +98,5 @@ export const logout = () => {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("expiresAt");
+  localStorage.removeItem("refreshTokenExpiresAt");
 };
