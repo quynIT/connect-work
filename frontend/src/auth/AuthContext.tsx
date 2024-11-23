@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const userData = await getUserProfile();
         setUser(userData);
-      } catch (e) {
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);
@@ -72,19 +72,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const interval = setInterval(() => {
       const expiresAt = localStorage.getItem("expiresAt");
       const currentTime = new Date().getTime();
-      console.log("Thời gian hiện tại", currentTime);
-      console.log(
-        "Thời gian reset trước khi hết hạn",
-        expiresAt - (parseInt(expiresAt) - 2 * 60 * 1000)
-      );
-      console.log(
-        "Thời gian còn lại sẽ hết hạn",
-        parseInt(expiresAt) - currentTime
-      );
       if (expiresAt && currentTime >= parseInt(expiresAt) - 2 * 60 * 1000) {
         refreshTokenHandler();
       }
-    }, 120000); // Kiểm tra mỗi phút
+    }, 400000); // Kiểm tra mỗi phút
 
     return () => clearInterval(interval); // Dọn dẹp khi component unmount
   }, []);

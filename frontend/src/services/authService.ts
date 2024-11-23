@@ -26,7 +26,14 @@ export const login = async (username: string, password: string) => {
     console.log("Thời gian hết hạn", expiresAt.toString());
     return response.data; // Trả về dữ liệu để có thể xử lý thêm (ví dụ: thông tin người dùng)
   } catch (error) {
-    console.error("Login failed:", error.response?.data?.message || error);
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Login failed:",
+        error.response?.data?.message || error.message
+      );
+    } else {
+      console.error("Login failed:", error);
+    }
     throw error;
   }
 };
@@ -48,10 +55,14 @@ export const getUserProfile = async () => {
 
     return response.data; // Trả về thông tin người dùng
   } catch (error) {
-    console.error(
-      "Failed to fetch user profile:",
-      error.response?.data?.message || error
-    );
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Failed to fetch user profile:",
+        error.response?.data?.message || error.message
+      );
+    } else {
+      console.error("Failed to fetch user profile:", error);
+    }
     throw error;
   }
 };
@@ -59,7 +70,6 @@ export const getUserProfile = async () => {
 // Hàm làm mới token (dùng refreshToken)
 export const refreshAccessToken = async () => {
   const refreshToken = localStorage.getItem("refreshToken");
-  console.log("Refresh token", refreshToken); // Log refreshToken để kiểm tra
 
   if (!refreshToken) {
     throw new Error("No refresh token found");
@@ -79,15 +89,19 @@ export const refreshAccessToken = async () => {
     localStorage.setItem("accessToken", accessToken);
 
     // Tính toán và lưu thời gian hết hạn của token
-    const expiresAt = new Date().getTime() + expiresIn;
+    const expiresAt = new Date().getTime() + parseInt(expiresIn);
     localStorage.setItem("expiresAt", expiresAt.toString());
 
     return accessToken; // Trả về accessToken mới
   } catch (error) {
-    console.error(
-      "Error refreshing access token:",
-      error.response?.data?.message || error
-    );
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Error refreshing access token:",
+        error.response?.data?.message || error.message
+      );
+    } else {
+      console.error("Error refreshing access token:", error);
+    }
     throw error; // Nếu có lỗi, ném lại lỗi
   }
 };
