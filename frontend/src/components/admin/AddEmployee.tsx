@@ -12,7 +12,9 @@ import {
   FaUserClock,
   FaMoneyCheckAlt,
 } from "react-icons/fa";
-
+import { db } from "../../firebase/config"; // Import firebase đã cấu hình
+import { collection, addDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 function AddEmployee() {
   const [image, setImage] = useState<string | null>(null);
   const [username, setUsername] = useState("");
@@ -28,11 +30,14 @@ function AddEmployee() {
   const [gender, setGender] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setImage(url);
+      const storage = getStorage();
+      const fileRef = ref(storage, `avatars/${file.name}`);
+      await uploadBytes(fileRef, file);
+      const fileURL = await getDownloadURL(fileRef);
+      setImage(fileURL); // Lưu URL ảnh vào state
     }
   };
 
@@ -100,6 +105,15 @@ function AddEmployee() {
           "http://localhost:3000/auth/register",
           formData
         );
+        const userRef = collection(db, "users");
+        await addDoc(userRef, {
+          username,
+          name,
+          gender,
+          position,
+          avt: image || "default.jpg", // Lưu ảnh đại diện (có thể tải ảnh lên Firebase Storage nếu cần)
+          createdAt: new Date(), // Thời gian tạo
+        });
         alert("Thêm nhân viên thành công!");
         console.log(response.data);
       } catch (error) {
