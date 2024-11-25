@@ -23,7 +23,6 @@ export const login = async (username: string, password: string) => {
     // Cập nhật thời gian hết hạn của token
     const expiresAt = new Date().getTime() + parseInt(expiresIn);
     localStorage.setItem("expiresAt", expiresAt.toString());
-    console.log("Thời gian hết hạn", expiresAt.toString());
     return response.data; // Trả về dữ liệu để có thể xử lý thêm (ví dụ: thông tin người dùng)
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -83,7 +82,6 @@ export const refreshAccessToken = async () => {
 
     // Nhận token mới từ phản hồi
     const { accessToken, expiresIn } = response.data;
-    console.log("Token mới", accessToken);
 
     // Lưu accessToken mới vào localStorage
     localStorage.setItem("accessToken", accessToken);

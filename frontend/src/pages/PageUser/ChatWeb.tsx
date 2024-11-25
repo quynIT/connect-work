@@ -3,8 +3,22 @@ import {
   VideoCameraIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { db } from "../../firebase/config";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  orderBy,
+} from "firebase/firestore";
+import { getUserProfile } from "../../services/authService";
 interface User {
+  id: string;
+  username: string;
   name: string;
   lastMessage: string;
   active: boolean;
@@ -12,79 +26,336 @@ interface User {
 }
 
 interface Message {
+  id: string;
   text: string;
-  sender: string;
-  time: string;
+  username: string;
+  name: string;
+  avt: string;
+  roomId: string;
+  createdAt: Date;
 }
 
-const users: User[] = [
-  {
-    name: "Lại Hữu Lợi",
-    lastMessage: "Bạn: v mai chạy qua lúc mấy h",
-    active: false,
-    unread: true,
-  },
-  { name: "Tấn Hào", lastMessage: "Bạn: ???", active: false, unread: false },
-  {
-    name: "thích đủ thứ🐱",
-    lastMessage: "You sent a sticker.",
-    active: false,
-    unread: true,
-  },
-  { name: "Helen", lastMessage: "Mới gọi nè", active: false, unread: false },
-  {
-    name: "Võ Chế Bằng",
-    lastMessage: "Code y chang tấn công",
-    active: true,
-    unread: true,
-  },
-  {
-    name: "Phan Gia Đạt",
-    lastMessage: "Quá trời r",
-    active: true,
-    unread: false,
-  },
-  {
-    name: "Đoàn Nguyễn",
-    lastMessage: "Miễn có là dc à",
-    active: false,
-    unread: true,
-  },
-];
-
-const messages: Message[] = [
-  { text: "ehehhehehehehehehheh", sender: "me", time: "2:45 PM" },
-  {
-    text: "ehehhehehehehehehheh",
-    sender: "me",
-    time: "2:46 PM",
-  },
-  {
-    text: "ehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehheh",
-    sender: "other",
-    time: "2:47 PM",
-  },
-  {
-    text: "ehehhehehehehehehheh",
-    sender: "me",
-    time: "2:48 PM",
-  },
-];
+// const messages: Message[] = [
+//   { text: "ehehhehehehehehehheh", sender: "me", time: "2:45 PM" },
+//   {
+//     text: "ehehhehehehehehehheh",
+//     sender: "me",
+//     time: "2:46 PM",
+//   },
+//   {
+//     text: "ehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehheh",
+//     sender: "other",
+//     time: "2:47 PM",
+//   },
+//   {
+//     text: "ehehhehehehehehehheh",
+//     sender: "me",
+//     time: "2:48 PM",
+//   },
+// ];
 
 export default function ChatWeb() {
-  const currentChatUser = "thích đủ thứ🐱";
+  const [showAddRoomForm, setShowAddRoomForm] = useState(false);
+  const [newRoomName, setNewRoomName] = useState("");
+  const [searchUser, setSearchUser] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [userResults, setUserResults] = useState<User[]>([]);
+  const [username, setUsername] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<any[]>([]); // Danh sách phòng chat
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState<string>("");
+  const [userProfile, setUserProfile] = useState<{
+    name: string;
+    avt: string;
+  } | null>(null);
+
+  //Lấy thông tin người dùng từ firebase
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const profile = await getUserProfile();
+        setUsername(profile.username);
+
+        // Truy vấn Firestore để lấy name và avt
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("username", "==", profile.username));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+          const userData = snapshot.docs[0].data();
+          console.log("User Data:", userData);
+          setUserProfile({
+            name: userData.name,
+            avt: userData.avt,
+          });
+        } else {
+          console.error("User data not found in Firestore");
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  // Lấy tt user danh sách phòng chat từ Firestore
+  useEffect(() => {
+    let unsubscribe: () => void;
+    const fetchUserData = async () => {
+      try {
+        // 1. Lấy thông tin người dùng từ MongoDB
+        const profile = await getUserProfile();
+        setUsername(profile.username);
+        // 2. Lắng nghe danh sách phòng chat theo thời gian thực từ Firestore
+        const roomsRef = collection(db, "rooms");
+        const q = query(
+          roomsRef,
+          where("members", "array-contains", profile.username)
+        );
+        // Lắng nghe các thay đổi
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const fetchedRooms = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setRooms(fetchedRooms);
+        });
+      } catch (error) {
+        console.error(
+          "Error fetching user data or subscribing to chat rooms:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+
+    // Cleanup subscription khi component unmount
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+  // Lấy danh sách phòng chat
+  useEffect(() => {
+    const fetchRooms = () => {
+      const roomsRef = collection(db, "rooms");
+      const q = query(roomsRef);
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedRooms = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setRooms(fetchedRooms);
+      });
+
+      return unsubscribe;
+    };
+
+    const unsubscribe = fetchRooms();
+    return () => unsubscribe();
+  }, []);
+
+  // Lấy tin nhắn của phòng khi chọn phòng
+  useEffect(() => {
+    // Nếu không có phòng được chọn, xóa danh sách tin nhắn
+    if (!selectedRoom) {
+      setMessages([]); // Reset tin nhắn khi không có phòng
+      return;
+    }
+
+    const messagesRef = collection(db, "messages");
+    const q = query(
+      messagesRef,
+      where("roomId", "==", selectedRoom.id),
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedMessages: Message[] = snapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          if (
+            typeof data.text === "string" &&
+            typeof data.username === "string" &&
+            typeof data.name === "string" &&
+            typeof data.avt === "string" &&
+            typeof data.roomId === "string" &&
+            data.createdAt
+          ) {
+            return {
+              id: doc.id,
+              text: data.text,
+              username: data.username,
+              name: data.name,
+              avt: data.avt,
+              roomId: data.roomId,
+              createdAt: data.createdAt.toDate(), // Chuyển Timestamp Firestore sang Date
+            };
+          } else {
+            console.warn("Invalid message data:", data); // Log nếu dữ liệu không hợp lệ
+            return null;
+          }
+        })
+        .filter((msg): msg is Message => msg !== null); // Lọc tin nhắn hợp lệ
+
+      setMessages(fetchedMessages);
+    });
+
+    return () => unsubscribe();
+  }, [selectedRoom]);
+  if (loading) return <p>Loading...</p>;
+  if (!username) return <p>Error: Unable to fetch user data.</p>;
+
+  // Tìm kiếm user trong Firestore
+  const handleSearchUser = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const queryText = e.target.value;
+    setSearchUser(queryText);
+
+    if (!queryText.trim()) {
+      setUserResults([]);
+      return;
+    }
+
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(
+        usersRef,
+        where("name", ">=", queryText),
+        where("name", "<=", queryText + "\uf8ff")
+      );
+
+      const snapshot = await getDocs(q);
+      const results = snapshot.docs.map((doc) => {
+        const data = doc.data() as User;
+        return {
+          username: doc.id, // Sử dụng doc.id cho username, nếu đây là giá trị chính của Firestore.
+          ...data,
+        };
+      });
+
+      setUserResults(results);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  // Thêm user vào danh sách thành viên
+  const handleAddMember = (username: string) => {
+    if (!selectedMembers.includes(username)) {
+      setSelectedMembers((prev) => [...prev, username]);
+    }
+  };
+
+  // Lưu room mới vào Firestore
+  const handleSaveRoom = async () => {
+    if (!newRoomName.trim() || selectedMembers.length === 0 || !username) {
+      alert("Vui lòng điền tên room và thêm thành viên!");
+      return;
+    }
+
+    try {
+      const roomsRef = collection(db, "rooms");
+
+      // Thêm username của người tạo vào danh sách thành viên
+      const members = Array.from(new Set([...selectedMembers, username]));
+
+      await addDoc(roomsRef, {
+        name: newRoomName,
+        members,
+        createdAt: serverTimestamp(),
+      });
+
+      alert("Room created successfully!");
+      setShowAddRoomForm(false);
+      setNewRoomName("");
+      setSelectedMembers([]);
+    } catch (error) {
+      console.error("Error saving room:", error);
+      alert("Có lỗi xảy ra khi lưu room!");
+    }
+  };
+
+  // Xử lý gửi tin nhắn
+  const handleSendMessage = async () => {
+    console.log("newMessage:", newMessage);
+    console.log("selectedRoom:", selectedRoom);
+    console.log("userProfile:", userProfile);
+    if (!newMessage.trim() || !selectedRoom || !userProfile) {
+      console.error("Missing input for sending message.");
+      return;
+    }
+    if (!newMessage.trim()) {
+      console.error("Missing input for sending message: No message text.");
+      return;
+    }
+    if (!selectedRoom) {
+      console.error("Missing input for sending message: No room selected.");
+      return;
+    }
+    if (!userProfile) {
+      console.error("Missing input for sending message: No user profile.");
+      return;
+    }
+    const messagesRef = collection(db, "messages");
+    const newMsg = {
+      text: newMessage,
+      username: username,
+      name: userProfile.name,
+      avt: userProfile.avt,
+      roomId: selectedRoom.id,
+      createdAt: serverTimestamp(),
+    };
+
+    // Gửi tin nhắn mà không chờ phản hồi từ Firestore
+    addDoc(messagesRef, newMsg).catch((error) => {
+      console.error("Error sending message to Firestore:", error);
+    });
+
+    // Xóa nội dung input ngay lập tức mà không chờ phản hồi từ Firestore
+    setNewMessage("");
+  };
 
   return (
     <div className="flex mt-[100px] h-[85vh] mb-5">
       {/* Left Sidebar - Chat List */}
       <div className="w-1/4 bg-gray-100 p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">Chats</h2>
+        <div className="flex">
+          <h2 className="text-lg font-semibold mb-4">Chats</h2>
+          <button
+            onClick={() => setShowAddRoomForm(true)}
+            className=" bg-blue-500 text-white px-4 py-2 rounded mb-4 ml-40"
+          >
+            + Add Room
+          </button>
+        </div>
         <input
           type="text"
           placeholder="Search Messenger"
           className="w-full px-3 py-2 mb-4 border rounded"
         />
         <ul>
+          {rooms.map((room) => (
+            <li
+              key={room.id}
+              onClick={() => setSelectedRoom(room)}
+              className={`cursor-pointer p-2 ${
+                selectedRoom?.id === room.id ? "bg-blue-100" : ""
+              }`}
+            >
+              <h3 className="font-semibold">{room.name}</h3>
+              <p className="text-sm text-gray-600">
+                Members: {room.members.join(", ")}
+              </p>
+            </li>
+          ))}
+        </ul>
+        {/* <ul>
           {users.map((user, index) => (
             <li
               key={index}
@@ -100,67 +371,155 @@ export default function ChatWeb() {
               )}
             </li>
           ))}
-        </ul>
+        </ul> */}
       </div>
-
-      {/* Chat Section */}
-      <div className="flex-1 bg-gray-50 p-4 flex flex-col justify-between">
-        {/* Header - Display current chat user */}
-        <div className="flex items-center border-b pb-4 mb-4">
-          <div className="w-10 h-10 bg-gray-400 rounded-full mr-4" />
-          <h2 className="text-lg font-semibold flex-1">{currentChatUser}</h2>
-
-          {/* Icons for call, video call, and about */}
-          <div className="flex space-x-3">
-            <PhoneIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
-            <VideoCameraIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
-            <InformationCircleIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
+      {/* Add Room Form */}
+      {showAddRoomForm && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-10">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[400px]">
+            <h2 className="text-xl font-semibold mb-4">Add New Room</h2>
+            <input
+              type="text"
+              placeholder="Room Name"
+              className="w-full px-3 py-2 mb-4 border rounded"
+              value={newRoomName}
+              onChange={(e) => setNewRoomName(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Search Users"
+              className="w-full px-3 py-2 mb-4 border rounded"
+              value={searchUser}
+              onChange={handleSearchUser}
+            />
+            <ul className="mb-4">
+              {userResults.map((user) => (
+                <li
+                  key={user.username}
+                  className="flex justify-between items-center p-2 border-b"
+                >
+                  <span>{user.name}</span>
+                  <button
+                    onClick={() => handleAddMember(user.username)}
+                    className="text-blue-500"
+                  >
+                    Add
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="mb-4">
+              <h3 className="font-semibold">Selected Members:</h3>
+              <ul>
+                {selectedMembers.map((member, index) => (
+                  <li key={index} className="text-gray-700">
+                    {member}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowAddRoomForm(false)}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveRoom}
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+              >
+                Save Room
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* Messages */}
-        <div className="overflow-y-auto flex-1">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${
-                message.sender === "me" ? "justify-end" : "justify-start"
-              } mb-2`}
-            >
-              <div
-                className={`${
-                  message.sender === "me" ? "bg-yellow-500" : "bg-gray-200"
-                } p-2 rounded-lg max-w-xs break-words`}
-              >
-                <p className="text-sm">{message.text}</p>
+      )}
+      {/* Chat Section */}
+      <div className="flex-1 bg-gray-50 p-4 flex flex-col justify-between">
+        {selectedRoom ? (
+          <>
+            {/* Header */}
+            <div className="flex items-center border-b pb-4 mb-4">
+              <div className="w-10 h-10 bg-gray-400 rounded-full mr-4" />
+              <h2 className="text-lg font-semibold flex-1">
+                {selectedRoom.name}
+              </h2>
+              <div className="flex space-x-3">
+                <PhoneIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
+                <VideoCameraIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
+                <InformationCircleIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Message Input */}
-        <div className="flex items-center border-t p-2">
-          <button className="text-gray-500 mr-2">
-            <i className="fas fa-plus" />
-          </button>
-          <input
-            type="text"
-            placeholder="Aa"
-            className="flex-1 px-3 py-2 border rounded-lg focus:outline-none"
-          />
-          <button className="text-gray-500 ml-2">
-            <i className="fas fa-smile" />
-          </button>
-          <button className="text-gray-500 ml-2">
-            <i className="fas fa-paper-plane" />
-          </button>
-        </div>
+            {/* Messages */}
+            <div className="overflow-y-auto flex-1 mb-4">
+              {messages.length === 0 ? (
+                <p className="text-center text-gray-600">
+                  Chưa có tin nhắn nào
+                </p>
+              ) : (
+                messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${
+                      message.username === username
+                        ? "justify-end"
+                        : "justify-start"
+                    } mb-2`}
+                  >
+                    {message.username !== username && (
+                      <img
+                        src={message.avt}
+                        alt={`${message.name}'s avatar`}
+                        className="w-8 h-8 rounded-full mr-2"
+                      />
+                    )}
+                    <div
+                      className={`p-2 rounded-lg max-w-xs break-words ${
+                        message.username === username
+                          ? "bg-yellow-500 text-white"
+                          : "bg-gray-200 text-gray-800"
+                      }`}
+                    >
+                      <p className="text-sm">{message.text}</p>
+                      {message.username !== username && (
+                        <p className="text-xs text-gray-600">{message.name}</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="flex items-center border-t p-2">
+              <input
+                type="text"
+                placeholder="Aa"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-lg focus:outline-none"
+              />
+              <button
+                onClick={handleSendMessage}
+                className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-lg"
+              >
+                Gửi
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="text-center text-gray-600">
+            Chọn một phòng để bắt đầu chat
+          </p>
+        )}
       </div>
 
       {/* Right Sidebar - Active Users */}
       <div className="w-1/4 bg-white p-4 overflow-y-auto border-l">
         <h2 className="text-lg font-semibold mb-4">Active</h2>
-        <ul>
+        {/* <ul>
           {users
             .filter((user) => user.active)
             .map((user, index) => (
@@ -173,7 +532,7 @@ export default function ChatWeb() {
                 <span className="h-3 w-3 bg-green-500 rounded-full ml-auto" />
               </li>
             ))}
-        </ul>
+        </ul> */}
       </div>
     </div>
   );
