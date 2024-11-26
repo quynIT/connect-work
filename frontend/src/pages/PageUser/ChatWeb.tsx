@@ -14,7 +14,16 @@ import {
   serverTimestamp,
   onSnapshot,
   orderBy,
+  updateDoc,
+  doc,
+  limit,
 } from "firebase/firestore";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
 import { getUserProfile } from "../../services/authService";
 interface User {
   id: string;
@@ -34,35 +43,26 @@ interface Message {
   roomId: string;
   createdAt: Date;
 }
-
-// const messages: Message[] = [
-//   { text: "ehehhehehehehehehheh", sender: "me", time: "2:45 PM" },
-//   {
-//     text: "ehehhehehehehehehheh",
-//     sender: "me",
-//     time: "2:46 PM",
-//   },
-//   {
-//     text: "ehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehhehehehhehehehehehehheh",
-//     sender: "other",
-//     time: "2:47 PM",
-//   },
-//   {
-//     text: "ehehhehehehehehehheh",
-//     sender: "me",
-//     time: "2:48 PM",
-//   },
-// ];
+interface Room {
+  id: string;
+  name: string;
+  members: string[]; // Danh sách các thành viên trong phòng
+  avtroom: string; // URL avatar của phòng
+  createdAt: Date; // Thời gian tạo phòng, có thể là Timestamp hoặc Date
+  lastMessage?: string; // Tin nhắn cuối cùng (tùy chọn)
+  lastMessageTime?: Date | null; // Thời gian tin nhắn cuối cùng (tùy chọn)
+}
 
 export default function ChatWeb() {
   const [showAddRoomForm, setShowAddRoomForm] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null); // Ảnh được chọn
+  const [uploading, setUploading] = useState(false); // Trạng thái tải ảnh
   const [searchUser, setSearchUser] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [userResults, setUserResults] = useState<User[]>([]);
   const [username, setUsername] = useState<string | null>(null);
-  const [rooms, setRooms] = useState<any[]>([]); // Danh sách phòng chat
-  const [loading, setLoading] = useState<boolean>(true);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
@@ -102,63 +102,55 @@ export default function ChatWeb() {
   }, []);
 
   // Lấy tt user danh sách phòng chat từ Firestore
+
   useEffect(() => {
-    let unsubscribe: () => void;
-    const fetchUserData = async () => {
+    let unsubscribe: (() => void) | undefined;
+    const fetchRooms = async () => {
       try {
-        // 1. Lấy thông tin người dùng từ MongoDB
         const profile = await getUserProfile();
         setUsername(profile.username);
-        // 2. Lắng nghe danh sách phòng chat theo thời gian thực từ Firestore
         const roomsRef = collection(db, "rooms");
         const q = query(
           roomsRef,
-          where("members", "array-contains", profile.username)
+          where("members", "array-contains", profile.username) // Lọc các phòng mà người dùng tham gia
         );
-        // Lắng nghe các thay đổi
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const fetchedRooms = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const fetchedRooms: Room[] = snapshot.docs.map((doc) => {
+            const data = doc.data();
+
+            return {
+              id: doc.id,
+              name: data.name || "",
+              members: data.members || [],
+              avtroom: data.avtroom || "",
+              createdAt: data.createdAt || new Date(),
+              lastMessage: data.lastMessage,
+              lastMessageTime: data.lastMessageTime
+                ? data.lastMessageTime.toDate()
+                : null,
+            };
+          });
+          fetchedRooms.sort((a, b) => {
+            const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0; // Lấy thời gian tính bằng milliseconds
+            const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
+            return timeB - timeA; // Sắp xếp từ tin nhắn gần nhất
+          });
           setRooms(fetchedRooms);
         });
+
+        return unsubscribe;
       } catch (error) {
-        console.error(
-          "Error fetching user data or subscribing to chat rooms:",
-          error
-        );
-      } finally {
-        setLoading(false);
+        console.error("Error fetching rooms:", error);
       }
     };
 
-    fetchUserData();
+    fetchRooms();
 
-    // Cleanup subscription khi component unmount
     return () => {
-      if (unsubscribe) unsubscribe();
+      // Cleanup subscription khi component unmount
+      unsubscribe?.();
     };
-  }, []);
-  // Lấy danh sách phòng chat
-  useEffect(() => {
-    const fetchRooms = () => {
-      const roomsRef = collection(db, "rooms");
-      const q = query(roomsRef);
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedRooms = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setRooms(fetchedRooms);
-      });
-
-      return unsubscribe;
-    };
-
-    const unsubscribe = fetchRooms();
-    return () => unsubscribe();
   }, []);
 
   // Lấy tin nhắn của phòng khi chọn phòng
@@ -209,35 +201,89 @@ export default function ChatWeb() {
 
     return () => unsubscribe();
   }, [selectedRoom]);
-  if (loading) return <p>Loading...</p>;
-  if (!username) return <p>Error: Unable to fetch user data.</p>;
+  useEffect(() => {
+    const fetchRoomsWithLastMessage = async () => {
+      try {
+        const profile = await getUserProfile();
+        setUsername(profile.username);
+        const roomsRef = collection(db, "rooms");
+        const q = query(
+          roomsRef,
+          where("members", "array-contains", profile.username) // Thêm bộ lọc ở đây
+        );
+        const roomsSnapshot = await getDocs(q);
 
-  // Tìm kiếm user trong Firestore
+        const fetchedRooms: Room[] = await Promise.all(
+          roomsSnapshot.docs.map(async (roomDoc) => {
+            const roomData = roomDoc.data();
+            const messagesRef = collection(db, "messages");
+            const lastMessageQuery = query(
+              messagesRef,
+              where("roomId", "==", roomDoc.id),
+              orderBy("createdAt", "desc"),
+              limit(10) // Lấy tin nhắn gần nhất
+            );
+            const messageSnapshot = await getDocs(lastMessageQuery);
+            const lastMessage = messageSnapshot.docs[0]?.data() || null;
+
+            return {
+              id: roomDoc.id,
+              name: roomData.name || "Tên phòng", // Gán giá trị mặc định nếu thiếu
+              members: roomData.members || [], // Gán mảng rỗng nếu thiếu
+              avtroom: roomData.avtroom || "", // Gán giá trị mặc định nếu thiếu
+              createdAt: roomData.createdAt || new Date(), // Gán thời gian hiện tại nếu thiếu
+              lastMessage: lastMessage?.text || "Chưa có tin nhắn",
+              lastMessageTime: lastMessage?.createdAt
+                ? lastMessage.createdAt.toDate()
+                : null,
+            };
+          })
+        );
+
+        // Sắp xếp danh sách phòng theo tin nhắn gần nhất
+        fetchedRooms.sort((a, b) => {
+          const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0; // 0 nếu là null hoặc undefined
+          const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0; // 0 nếu là null hoặc undefined
+
+          return timeB - timeA; // Sắp xếp từ tin nhắn gần nhất
+        });
+
+        setRooms(fetchedRooms);
+      } catch (error) {
+        console.error("Error fetching rooms with last message:", error);
+      }
+    };
+
+    fetchRoomsWithLastMessage();
+  }, []);
+
+  // Tìm kiếm user trong Firestore ( Nếu dữ liệu lớn tạo thêm trường keyword để tìm kiếm)
   const handleSearchUser = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const queryText = e.target.value;
+    const queryText = e.target.value.trim().toLowerCase();
     setSearchUser(queryText);
 
-    if (!queryText.trim()) {
+    if (!queryText) {
       setUserResults([]);
       return;
     }
 
     try {
       const usersRef = collection(db, "users");
-      const q = query(
-        usersRef,
-        where("name", ">=", queryText),
-        where("name", "<=", queryText + "\uf8ff")
-      );
+      const snapshot = await getDocs(usersRef);
 
-      const snapshot = await getDocs(q);
-      const results = snapshot.docs.map((doc) => {
-        const data = doc.data() as User;
-        return {
-          username: doc.id, // Sử dụng doc.id cho username, nếu đây là giá trị chính của Firestore.
-          ...data,
-        };
-      });
+      const results = snapshot.docs
+        .map((doc) => {
+          const data = doc.data() as User;
+          return {
+            username: doc.id, // Sử dụng doc.id làm username nếu đây là giá trị chính.
+            ...data,
+          };
+        })
+        .filter(
+          (user) =>
+            !selectedMembers.includes(user.username) && // Loại user đã thêm
+            user.name.toLowerCase().includes(queryText) // Kiểm tra chứa ký tự tìm kiếm
+        );
 
       setUserResults(results);
     } catch (error) {
@@ -250,15 +296,49 @@ export default function ChatWeb() {
     if (!selectedMembers.includes(username)) {
       setSelectedMembers((prev) => [...prev, username]);
     }
+    setSearchUser(""); // Reset input search
+    setUserResults([]); // Xóa kết quả tìm kiếm
   };
-
+  // Hàm up ảnh room
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
   // Lưu room mới vào Firestore
   const handleSaveRoom = async () => {
     if (!newRoomName.trim() || selectedMembers.length === 0 || !username) {
       alert("Vui lòng điền tên room và thêm thành viên!");
       return;
     }
+    setUploading(true); // Hiển thị trạng thái tải ảnh
 
+    let avtroomURL = "";
+    if (selectedImage) {
+      try {
+        const storage = getStorage();
+        const storageRef = ref(storage, `rooms/${newRoomName}_${Date.now()}`);
+        const uploadTask = uploadBytesResumable(storageRef, selectedImage);
+
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            null,
+            (error) => reject(error),
+            async () => {
+              avtroomURL = await getDownloadURL(storageRef);
+              resolve();
+            }
+          );
+        });
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        alert("Có lỗi khi tải ảnh lên.");
+        setUploading(false);
+        return;
+      }
+    }
     try {
       const roomsRef = collection(db, "rooms");
 
@@ -268,6 +348,7 @@ export default function ChatWeb() {
       await addDoc(roomsRef, {
         name: newRoomName,
         members,
+        avtroom: avtroomURL || "",
         createdAt: serverTimestamp(),
       });
 
@@ -275,6 +356,8 @@ export default function ChatWeb() {
       setShowAddRoomForm(false);
       setNewRoomName("");
       setSelectedMembers([]);
+      setSearchUser(""); // Reset ô tìm kiếm user
+      setUserResults([]); // Xóa kết quả tìm kiếm user
     } catch (error) {
       console.error("Error saving room:", error);
       alert("Có lỗi xảy ra khi lưu room!");
@@ -283,25 +366,8 @@ export default function ChatWeb() {
 
   // Xử lý gửi tin nhắn
   const handleSendMessage = async () => {
-    console.log("newMessage:", newMessage);
-    console.log("selectedRoom:", selectedRoom);
-    console.log("userProfile:", userProfile);
-    if (!newMessage.trim() || !selectedRoom || !userProfile) {
-      console.error("Missing input for sending message.");
-      return;
-    }
-    if (!newMessage.trim()) {
-      console.error("Missing input for sending message: No message text.");
-      return;
-    }
-    if (!selectedRoom) {
-      console.error("Missing input for sending message: No room selected.");
-      return;
-    }
-    if (!userProfile) {
-      console.error("Missing input for sending message: No user profile.");
-      return;
-    }
+    if (!newMessage.trim() || !selectedRoom || !userProfile) return;
+
     const messagesRef = collection(db, "messages");
     const newMsg = {
       text: newMessage,
@@ -312,13 +378,37 @@ export default function ChatWeb() {
       createdAt: serverTimestamp(),
     };
 
-    // Gửi tin nhắn mà không chờ phản hồi từ Firestore
-    addDoc(messagesRef, newMsg).catch((error) => {
-      console.error("Error sending message to Firestore:", error);
-    });
+    try {
+      await addDoc(messagesRef, newMsg);
 
-    // Xóa nội dung input ngay lập tức mà không chờ phản hồi từ Firestore
-    setNewMessage("");
+      // Cập nhật lastMessage và lastMessageTime cho phòng
+      const roomRef = doc(db, "rooms", selectedRoom.id);
+      await updateDoc(roomRef, {
+        lastMessage: newMessage,
+        lastMessageTime: serverTimestamp(),
+      });
+      setRooms((prevRooms) => {
+        return prevRooms
+          .map((room) =>
+            room.id === selectedRoom.id
+              ? {
+                  ...room,
+                  lastMessage: newMessage,
+                  lastMessageTime: new Date(), // Cập nhật thời gian tin nhắn
+                }
+              : room
+          )
+          .sort((a, b) => {
+            // Đảm bảo so sánh thời gian chính xác
+            const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0;
+            const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
+            return timeB - timeA; // Sắp xếp từ tin nhắn gần nhất
+          });
+      });
+      setNewMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   return (
@@ -344,14 +434,21 @@ export default function ChatWeb() {
             <li
               key={room.id}
               onClick={() => setSelectedRoom(room)}
-              className={`cursor-pointer p-2 ${
+              className={`cursor-pointer flex items-center p-2 ${
                 selectedRoom?.id === room.id ? "bg-blue-100" : ""
               }`}
             >
-              <h3 className="font-semibold">{room.name}</h3>
-              <p className="text-sm text-gray-600">
-                Members: {room.members.join(", ")}
-              </p>
+              <img
+                src={room.avtroom || "URL_mặc_định"}
+                alt={`${room.name} avatar`}
+                className="w-10 h-10 rounded-full mr-3"
+              />
+              <div>
+                <h3 className="font-semibold">{room.name}</h3>
+                <p className="text-sm text-gray-600 truncate">
+                  {room.lastMessage}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
@@ -392,6 +489,13 @@ export default function ChatWeb() {
               value={searchUser}
               onChange={handleSearchUser}
             />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="mb-4"
+            />
+            {uploading && <p>Uploading image...</p>}
             <ul className="mb-4">
               {userResults.map((user) => (
                 <li
@@ -441,7 +545,15 @@ export default function ChatWeb() {
           <>
             {/* Header */}
             <div className="flex items-center border-b pb-4 mb-4">
-              <div className="w-10 h-10 bg-gray-400 rounded-full mr-4" />
+              {selectedRoom.avtroom ? (
+                <img
+                  src={selectedRoom.avtroom}
+                  alt={`${selectedRoom.name} avatar`}
+                  className="w-10 h-10 rounded-full mr-4 object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gray-400 rounded-full mr-4" />
+              )}
               <h2 className="text-lg font-semibold flex-1">
                 {selectedRoom.name}
               </h2>
