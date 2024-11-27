@@ -66,6 +66,7 @@ export default function ChatWeb() {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<{
     name: string;
     avt: string;
@@ -571,36 +572,63 @@ export default function ChatWeb() {
                   Chưa có tin nhắn nào
                 </p>
               ) : (
-                messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${
-                      message.username === username
-                        ? "justify-end"
-                        : "justify-start"
-                    } mb-2`}
-                  >
-                    {message.username !== username && (
-                      <img
-                        src={message.avt}
-                        alt={`${message.name}'s avatar`}
-                        className="w-8 h-8 rounded-full mr-2"
-                      />
-                    )}
+                messages.map((message, index) => {
+                  // Chuyển đổi thời gian tạo thành đối tượng Date
+                  const messageDate = new Date(message.createdAt);
+                  const timeString = messageDate.toLocaleString("en-US", {
+                    weekday: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+
+                  return (
                     <div
-                      className={`p-2 rounded-lg max-w-xs break-words ${
+                      key={index}
+                      className={`flex ${
                         message.username === username
-                          ? "bg-yellow-500 text-white"
-                          : "bg-gray-200 text-gray-800"
-                      }`}
+                          ? "justify-end"
+                          : "justify-start"
+                      } mb-2`}
+                      onMouseEnter={() => setHoveredMessageId(message.id)}
+                      onMouseLeave={() => setHoveredMessageId(null)}
                     >
-                      <p className="text-sm">{message.text}</p>
                       {message.username !== username && (
-                        <p className="text-xs text-gray-600">{message.name}</p>
+                        <img
+                          src={message.avt}
+                          alt={`${message.name}'s avatar`}
+                          className="w-9 h-9 rounded-full mr-2 mt-1"
+                        />
                       )}
+                      <div
+                        className={`relative p-2 rounded-2xl max-w-xs pl-3 pr-3 break-words ${
+                          message.username === username
+                            ? "bg-yellow-800 text-white mr-2"
+                            : "bg-gray-200 text-gray-800"
+                        }`}
+                      >
+                        <p className="text-sm">{message.text}</p>
+                        {message.username !== username && (
+                          <p className="text-xs text-gray-600">
+                            {message.name}
+                          </p>
+                        )}
+
+                        {/* Hiển thị thời gian khi di chuột vào */}
+                        {hoveredMessageId === message.id && (
+                          <p
+                            className={`absolute text-xs text-white ${
+                              message.username === username
+                                ? "left-0 mt-11"
+                                : "right-0 mt-14"
+                            } top-0 bg-black p-2 rounded-xl z-10`}
+                          >
+                            {timeString} {/* Hiển thị thời gian */}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
