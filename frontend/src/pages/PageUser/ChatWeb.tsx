@@ -67,6 +67,7 @@ export default function ChatWeb() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+
   const [userProfile, setUserProfile] = useState<{
     name: string;
     avt: string;
@@ -257,7 +258,6 @@ export default function ChatWeb() {
 
     fetchRoomsWithLastMessage();
   }, []);
-
   // Tìm kiếm user trong Firestore ( Nếu dữ liệu lớn tạo thêm trường keyword để tìm kiếm)
   const handleSearchUser = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const queryText = e.target.value.trim().toLowerCase();
@@ -411,6 +411,68 @@ export default function ChatWeb() {
       console.error("Error sending message:", error);
     }
   };
+  const handleSearchAddMember = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const queryText = e.target.value.trim().toLowerCase();
+    setSearchUser(queryText);
+
+    if (!queryText) {
+      setUserResults([]);
+      return;
+    }
+
+    try {
+      const usersRef = collection(db, "users");
+      const snapshot = await getDocs(usersRef);
+
+      const results = snapshot.docs
+        .map((doc) => {
+          const data = doc.data() as User;
+          return {
+            username: doc.id, // Sử dụng doc.id làm username nếu đây là giá trị chính.
+            ...data,
+          };
+        })
+        .filter(
+          (user) =>
+            !selectedRoom.members.includes(user.username) && // Chỉ tìm user chưa nằm trong phòng
+            user.name.toLowerCase().includes(queryText) // Kiểm tra chứa ký tự tìm kiếm
+        );
+
+      setUserResults(results);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  // Hàm thêm thành viên vào phòng
+  const handleAddMemberToRoom = async (username: string) => {
+    if (!selectedRoom) return;
+
+    try {
+      const roomRef = doc(db, "rooms", selectedRoom.id);
+
+      // Lấy danh sách members hiện tại và thêm user mới
+      const updatedMembers = Array.from(
+        new Set([...selectedRoom.members, username])
+      );
+
+      // Cập nhật Firestore
+      await updateDoc(roomRef, { members: updatedMembers });
+
+      // Cập nhật UI
+      setSelectedRoom(
+        (prevRoom) => prevRoom && { ...prevRoom, members: updatedMembers }
+      );
+      setSearchUser(""); // Reset ô tìm kiếm user
+      setUserResults([]); // Xóa kết quả tìm kiếm user
+      alert("Thành viên đã được thêm vào phòng!");
+    } catch (error) {
+      console.error("Error adding member to room:", error);
+      alert("Có lỗi xảy ra khi thêm thành viên vào phòng!");
+    }
+  };
 
   return (
     <div className="flex mt-[100px] h-[85vh] mb-5">
@@ -559,6 +621,41 @@ export default function ChatWeb() {
                 {selectedRoom.name}
               </h2>
               <div className="flex space-x-3">
+                {selectedRoom && (
+                  <div>
+                    <h3>Thành viên hiện tại:</h3>
+                    <ul>
+                      {selectedRoom.members.map((member, index) => (
+                        <li key={index}>{member}</li>
+                      ))}
+                    </ul>
+
+                    <input
+                      type="text"
+                      placeholder="Tìm thành viên để thêm"
+                      className="w-full px-3 py-2 mb-4 border rounded"
+                      value={searchUser}
+                      onChange={handleSearchAddMember}
+                    />
+
+                    <ul>
+                      {userResults.map((user) => (
+                        <li
+                          key={user.username}
+                          className="flex justify-between items-center p-2 border-b"
+                        >
+                          <span>{user.name}</span>
+                          <button
+                            onClick={() => handleAddMemberToRoom(user.username)}
+                            className="text-blue-500"
+                          >
+                            Thêm
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <PhoneIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
                 <VideoCameraIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
                 <InformationCircleIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
