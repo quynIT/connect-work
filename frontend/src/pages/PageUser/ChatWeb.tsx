@@ -3,7 +3,8 @@ import {
   VideoCameraIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
-import React, { useEffect, useState } from "react";
+import "../../App.css";
+import React, { useRef, useEffect, useState } from "react";
 import { db } from "../../firebase/config";
 import {
   collection,
@@ -28,6 +29,7 @@ import { getUserProfile } from "../../services/authService";
 interface User {
   id: string;
   username: string;
+  avt: string;
   name: string;
   lastMessage: string;
   active: boolean;
@@ -58,6 +60,7 @@ export default function ChatWeb() {
   const [newRoomName, setNewRoomName] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null); // Ảnh được chọn
   const [uploading, setUploading] = useState(false); // Trạng thái tải ảnh
+  const [isMemberVisible, setIsMemberVisible] = useState(false);
   const [searchUser, setSearchUser] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [userResults, setUserResults] = useState<User[]>([]);
@@ -66,13 +69,13 @@ export default function ChatWeb() {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
-
   const [userProfile, setUserProfile] = useState<{
     name: string;
     avt: string;
   } | null>(null);
-
   //Lấy thông tin người dùng từ firebase
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -84,6 +87,14 @@ export default function ChatWeb() {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("username", "==", profile.username));
         const snapshot = await getDocs(q);
+
+        // Truy vấn lấy tất cả người dùng từ Firestore
+        const profileSnapshot = await getDocs(usersRef);
+        const userList = profileSnapshot.docs.map((doc) => ({
+          username: doc.id,
+          ...doc.data(),
+        }));
+        setUsers(userList);
 
         if (!snapshot.empty) {
           const userData = snapshot.docs[0].data();
@@ -258,6 +269,10 @@ export default function ChatWeb() {
 
     fetchRoomsWithLastMessage();
   }, []);
+  useEffect(() => {
+    document.body.classList.add("no-footer"); // Thêm lớp 'no-footer' khi vào trang
+    return () => document.body.classList.remove("no-footer"); // Gỡ lớp khi rời trang
+  }, []);
   // Tìm kiếm user trong Firestore ( Nếu dữ liệu lớn tạo thêm trường keyword để tìm kiếm)
   const handleSearchUser = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const queryText = e.target.value.trim().toLowerCase();
@@ -407,10 +422,22 @@ export default function ChatWeb() {
           });
       });
       setNewMessage("");
+      scrollToBottom();
     } catch (error) {
       console.error("Error sending message:", error);
     }
   };
+
+  // Hàm cuộn xuống cuối
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+  // Cuộn xuống khi có tin nhắn mới
+  useEffect(() => {
+    scrollToBottom(); // Cuộn xuống cuối khi có tin nhắn mới hoặc chọn phòng mới
+  }, [messages, selectedRoom]);
   const handleSearchAddMember = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -445,7 +472,10 @@ export default function ChatWeb() {
       console.error("Error fetching users:", error);
     }
   };
-
+  // Hiện form thêm thành viên
+  const toggleMemberList = () => {
+    setIsMemberVisible(!isMemberVisible); // Chuyển đổi trạng thái hiển thị form
+  };
   // Hàm thêm thành viên vào phòng
   const handleAddMemberToRoom = async (username: string) => {
     if (!selectedRoom) return;
@@ -620,40 +650,82 @@ export default function ChatWeb() {
               <h2 className="text-lg font-semibold flex-1">
                 {selectedRoom.name}
               </h2>
+              <button onClick={toggleMemberList} className="text-blue-500">
+                {isMemberVisible ? "Ẩn thành viên" : "Xem thành viên"}
+              </button>
               <div className="flex space-x-3">
-                {selectedRoom && (
-                  <div>
-                    <h3>Thành viên hiện tại:</h3>
-                    <ul>
-                      {selectedRoom.members.map((member, index) => (
-                        <li key={index}>{member}</li>
-                      ))}
-                    </ul>
-
-                    <input
-                      type="text"
-                      placeholder="Tìm thành viên để thêm"
-                      className="w-full px-3 py-2 mb-4 border rounded"
-                      value={searchUser}
-                      onChange={handleSearchAddMember}
-                    />
-
-                    <ul>
-                      {userResults.map((user) => (
-                        <li
-                          key={user.username}
-                          className="flex justify-between items-center p-2 border-b"
+                {isMemberVisible && selectedRoom && (
+                  <div className="fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50 z-50">
+                    <div className="bg-white p-6 rounded-lg w-96 max-w-full">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-semibold">Thành viên</h3>
+                        <button
+                          onClick={toggleMemberList}
+                          className="text-gray-500 hover:text-gray-700"
                         >
-                          <span>{user.name}</span>
-                          <button
-                            onClick={() => handleAddMemberToRoom(user.username)}
-                            className="text-blue-500"
+                          <span className="text-2xl">&times;</span>
+                        </button>
+                      </div>
+
+                      {/* Tìm kiếm thành viên */}
+                      <input
+                        type="text"
+                        placeholder="Tìm thành viên để thêm"
+                        className="w-full px-3 py-2 mb-4 border rounded"
+                        value={searchUser}
+                        onChange={handleSearchAddMember}
+                      />
+
+                      {/* Danh sách thành viên hiện tại */}
+                      <ul className="max-h-60 overflow-y-auto">
+                        {selectedRoom.members.map(
+                          (member: string, index: number) => {
+                            const user = users.find(
+                              (user) => user.username === member
+                            );
+
+                            return (
+                              <li
+                                key={index}
+                                className="flex items-center space-x-2 p-2 border-b"
+                              >
+                                {/* Hiển thị avatar */}
+                                {user?.avt ? (
+                                  <img
+                                    src={user.avt}
+                                    alt={`${user.name}'s avatar`}
+                                    className="w-8 h-8 rounded-full"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-gray-400 rounded-full" />
+                                )}
+                                <span>{user?.name}</span>
+                              </li>
+                            );
+                          }
+                        )}
+                      </ul>
+
+                      {/* Kết quả tìm kiếm người dùng */}
+                      <ul className="mt-4">
+                        {userResults.map((user) => (
+                          <li
+                            key={user.username}
+                            className="flex justify-between items-center p-2 border-b"
                           >
-                            Thêm
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                            <span>{user.name}</span>
+                            <button
+                              onClick={() =>
+                                handleAddMemberToRoom(user.username)
+                              }
+                              className="text-blue-500"
+                            >
+                              Thêm
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 )}
                 <PhoneIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
@@ -727,6 +799,7 @@ export default function ChatWeb() {
                   );
                 })
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
@@ -756,20 +829,22 @@ export default function ChatWeb() {
       {/* Right Sidebar - Active Users */}
       <div className="w-1/4 bg-white p-4 overflow-y-auto border-l">
         <h2 className="text-lg font-semibold mb-4">Active</h2>
-        {/* <ul>
-          {users
-            .filter((user) => user.active)
-            .map((user, index) => (
-              <li
-                key={index}
-                className="flex items-center space-x-4 p-2 hover:bg-gray-200 rounded"
-              >
-                <div className="w-10 h-10 bg-gray-400 rounded-full" />
-                <p className="font-semibold">{user.name}</p>
-                <span className="h-3 w-3 bg-green-500 rounded-full ml-auto" />
-              </li>
-            ))}
-        </ul> */}
+        <ul>
+          {users.map((user) => (
+            <li
+              key={user.username}
+              className="flex items-center space-x-4 p-2 hover:bg-gray-200 rounded"
+            >
+              <img
+                src={user.avt || "default-avatar.png"}
+                alt={user.name}
+                className="w-10 h-10 rounded-full"
+              />
+              <p className="font-semibold">{user.name}</p>
+              <span className="h-3 w-3 bg-green-500 rounded-full ml-auto" />
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
