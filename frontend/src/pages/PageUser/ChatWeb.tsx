@@ -6,6 +6,7 @@ import {
 import "../../App.css";
 import React, { useRef, useEffect, useState } from "react";
 import { db } from "../../firebase/config";
+import avtdefault from "../../assets/user/image/avt.jpg";
 import {
   collection,
   query,
@@ -26,6 +27,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { getUserProfile } from "../../services/authService";
+import { AiFillDelete } from "react-icons/ai";
 interface User {
   id: string;
   username: string;
@@ -98,7 +100,6 @@ export default function ChatWeb() {
 
         if (!snapshot.empty) {
           const userData = snapshot.docs[0].data();
-          console.log("User Data:", userData);
           setUserProfile({
             name: userData.name,
             avt: userData.avt,
@@ -134,9 +135,9 @@ export default function ChatWeb() {
 
             return {
               id: doc.id,
-              name: data.name || "",
+              name: data.name || "Noname",
               members: data.members || [],
-              avtroom: data.avtroom || "",
+              avtroom: data.avtroom || avtdefault,
               createdAt: data.createdAt || new Date(),
               lastMessage: data.lastMessage,
               lastMessageTime: data.lastMessageTime
@@ -243,7 +244,7 @@ export default function ChatWeb() {
               id: roomDoc.id,
               name: roomData.name || "Tên phòng", // Gán giá trị mặc định nếu thiếu
               members: roomData.members || [], // Gán mảng rỗng nếu thiếu
-              avtroom: roomData.avtroom || "", // Gán giá trị mặc định nếu thiếu
+              avtroom: roomData.avtroom || avtdefault, // Gán giá trị mặc định nếu thiếu
               createdAt: roomData.createdAt || new Date(), // Gán thời gian hiện tại nếu thiếu
               lastMessage: lastMessage?.text || "Chưa có tin nhắn",
               lastMessageTime: lastMessage?.createdAt
@@ -364,7 +365,7 @@ export default function ChatWeb() {
       await addDoc(roomsRef, {
         name: newRoomName,
         members,
-        avtroom: avtroomURL || "",
+        avtroom: avtroomURL || avtdefault,
         createdAt: serverTimestamp(),
       });
 
@@ -503,6 +504,32 @@ export default function ChatWeb() {
       alert("Có lỗi xảy ra khi thêm thành viên vào phòng!");
     }
   };
+  // Hàm xóa thành viên khỏi phòng
+  const handleRemoveMemberFromRoom = async (username: string) => {
+    if (!selectedRoom) return;
+
+    try {
+      const roomRef = doc(db, "rooms", selectedRoom.id);
+
+      // Loại bỏ thành viên khỏi danh sách
+      const updatedMembers = selectedRoom.members.filter(
+        (member: string) => member !== username
+      );
+
+      // Cập nhật Firestore
+      await updateDoc(roomRef, { members: updatedMembers });
+
+      // Cập nhật UI
+      setSelectedRoom((prevRoom: Room | null) =>
+        prevRoom ? { ...prevRoom, members: updatedMembers } : null
+      );
+
+      alert("Đã xóa thành viên khỏi phòng!");
+    } catch (error) {
+      console.error("Error removing member from room:", error);
+      alert("Có lỗi xảy ra khi xóa thành viên!");
+    }
+  };
 
   return (
     <div className="flex mt-[100px] h-[85vh] mb-5">
@@ -532,7 +559,7 @@ export default function ChatWeb() {
               }`}
             >
               <img
-                src={room.avtroom || "URL_mặc_định"}
+                src={room.avtroom || avtdefault}
                 alt={`${room.name} avatar`}
                 className="w-10 h-10 rounded-full mr-3"
               />
@@ -687,19 +714,33 @@ export default function ChatWeb() {
                             return (
                               <li
                                 key={index}
-                                className="flex items-center space-x-2 p-2 border-b"
+                                className="flex items-center justify-between p-2 border-b hover:bg-gray-50"
                               >
-                                {/* Hiển thị avatar */}
-                                {user?.avt ? (
-                                  <img
-                                    src={user.avt}
-                                    alt={`${user.name}'s avatar`}
-                                    className="w-8 h-8 rounded-full"
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 bg-gray-400 rounded-full" />
-                                )}
-                                <span>{user?.name}</span>
+                                <div className="flex items-center space-x-3">
+                                  {/* Hiển thị avatar */}
+                                  {user?.avt ? (
+                                    <img
+                                      src={user.avt}
+                                      alt={`${user.name}'s avatar`}
+                                      className="w-10 h-10 rounded-full"
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 bg-gray-400 rounded-full" />
+                                  )}
+                                  {/* Tên thành viên */}
+                                  <span className="text-gray-700 font-medium">
+                                    {user?.name}
+                                  </span>
+                                </div>
+                                {/* Nút thùng rác */}
+                                <button
+                                  onClick={() =>
+                                    handleRemoveMemberFromRoom(member)
+                                  }
+                                  className="text-red-500 hover:text-red-700 transition duration-200 ease-in-out"
+                                >
+                                  <AiFillDelete className="w-6 h-6" />
+                                </button>
                               </li>
                             );
                           }
@@ -836,7 +877,7 @@ export default function ChatWeb() {
               className="flex items-center space-x-4 p-2 hover:bg-gray-200 rounded"
             >
               <img
-                src={user.avt || "default-avatar.png"}
+                src={user.avt}
                 alt={user.name}
                 className="w-10 h-10 rounded-full"
               />

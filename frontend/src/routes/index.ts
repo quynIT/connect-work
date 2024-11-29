@@ -14,6 +14,7 @@ import MgNotification from "../pages/PageAdmin/MgNotification";
 import MgAttendance from "../pages/PageAdmin/MgAttendance";
 import MgSalary from "../pages/PageAdmin/MgSalary";
 import MgTask from "../pages/PageAdmin/MgTask";
+import ChangePassword from "../pages/PageUser/ChangePassword";
 export const routes = [
   {
     path: "/",
@@ -38,6 +39,10 @@ export const routes = [
   {
     path: "/notification-list",
     page: NotificationList,
+  },
+  {
+    path: "/change-password",
+    page: ChangePassword,
   },
   {
     path: "*",

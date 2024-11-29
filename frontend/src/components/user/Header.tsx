@@ -127,12 +127,18 @@ export default function Header() {
 
               {/* Menu hiện ra khi isMenuOpen là true */}
               {isMenuOpen && (
-                <div className="absolute right-0 mt-36 mr-32 bg-gray-800 rounded-lg shadow-lg w-48 p-2">
+                <div className="absolute right-0 mt-44 mr-32 bg-gray-800 rounded-lg shadow-lg w-48 p-2">
                   <Link
                     to="/account-info"
                     className="block px-4 py-2 text-gray-200 hover:bg-gray-700"
                   >
                     Account Settings
+                  </Link>
+                  <Link
+                    to="/change-password"
+                    className="block px-4 py-2 text-gray-200 hover:bg-gray-700"
+                  >
+                    Change Password
                   </Link>
                   <a
                     href="#"
