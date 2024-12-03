@@ -27,7 +27,7 @@ export class ProjectController {
   }
 
   // Lấy danh sách tất cả các dự án
-  @Get()
+  @Get('/all')
   async getAllProjects(): Promise<Project[]> {
     return this.projectService.getAllProjects();
   }
@@ -39,7 +39,7 @@ export class ProjectController {
   }
 
   // Cập nhật thông tin dự án theo ID
-  @Put(':id')
+  @Put('/update/:id')
   async updateProject(
     @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
@@ -48,7 +48,7 @@ export class ProjectController {
   }
 
   // Xóa dự án theo ID
-  @Delete(':id')
+  @Delete('/delete/:id')
   async deleteProject(@Param('id') id: string): Promise<any> {
     return this.projectService.deleteProject(id);
   }

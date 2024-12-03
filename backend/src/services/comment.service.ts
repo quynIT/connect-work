@@ -47,4 +47,16 @@ export class CommentService {
       throw new Error('Failed to delete comment');
     }
   }
+  // Lấy tất cả comment theo IDTask
+  async getCommentsByTask(taskId: string): Promise<Comment[]> {
+    try {
+      const comments = await this.commentRepository.findByConditionAll({
+        taskId,
+      });
+      return comments; // Trả về danh sách các comment
+    } catch (error) {
+      console.error('Error fetching comments for task:', error);
+      throw new Error('Failed to fetch comments for task');
+    }
+  }
 }

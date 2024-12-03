@@ -22,8 +22,14 @@ export class CommentController {
   }
 
   // Xóa comment theo ID
-  @Delete(':id')
+  @Delete('/delete/:id')
   async deleteComment(@Param('id') commentId: string): Promise<any> {
     return this.commentService.deleteComment(commentId); // Gọi service để xóa comment
+  }
+
+  @Get('/task/:taskId') // Định nghĩa đường dẫn với taskId
+  async getCommentsByTask(@Param('taskId') taskId: string): Promise<Comment[]> {
+    // Gọi service để lấy tất cả comment của task
+    return this.commentService.getCommentsByTask(taskId);
   }
 }

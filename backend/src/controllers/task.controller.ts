@@ -34,7 +34,7 @@ export class TaskController {
   }
 
   // Cập nhật thông tin công việc theo ID
-  @Put(':id')
+  @Put('/update/:id')
   async updateTask(
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
@@ -43,7 +43,7 @@ export class TaskController {
   }
 
   // Xóa công việc theo ID
-  @Delete(':id')
+  @Delete('/delete/:id')
   async deleteTask(@Param('id') id: string): Promise<any> {
     return this.taskService.deleteTask(id);
   }
