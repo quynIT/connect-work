@@ -12,7 +12,6 @@ import {
   FaUserClock,
   FaMoneyCheckAlt,
 } from "react-icons/fa";
-import avtuser from "../../assets/user/image/avt.jpg";
 import { db } from "../../firebase/config"; // Import firebase đã cấu hình
 import { collection, addDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -97,7 +96,7 @@ function AddEmployee() {
           stk: bankAccount,
           address,
           position,
-          avt: image || avtuser, // Tạm thời dùng tên file tĩnh
+          avt: image, // Tạm thời dùng tên file tĩnh
           name,
           bithdate: dateOfBirth,
         };
@@ -112,7 +111,7 @@ function AddEmployee() {
           name,
           gender,
           position,
-          avt: image || avtuser, // Lưu ảnh đại diện (có thể tải ảnh lên Firebase Storage nếu cần)
+          avt: image, // Lưu ảnh đại diện (có thể tải ảnh lên Firebase Storage nếu cần)
           createdAt: new Date(), // Thời gian tạo
         });
         alert("Thêm nhân viên thành công!");

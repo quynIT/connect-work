@@ -92,4 +92,41 @@ export class BaseRepository<T extends Document> {
   async findByIdAndUpdate(id: string, update: Partial<T>): Promise<T | null> {
     return this.model.findByIdAndUpdate(id, update).exec();
   }
+  async findByConditionAll(
+    filter: FilterQuery<T>,
+    field?: any,
+    option?: QueryOptions,
+    populate?: string | PopulateOptions | Array<string | PopulateOptions>,
+  ): Promise<T[]> {
+    // Trả về mảng thay vì đối tượng duy nhất
+    if (populate) {
+      if (typeof populate === 'string') {
+        populate = { path: populate };
+      }
+      return this.model
+        .find(filter, field, option)
+        .populate(populate as PopulateOptions)
+        .exec();
+    }
+    return this.model.find(filter, field, option).exec(); // Đảm bảo đây là find chứ không phải findOne
+  }
+
+  async findByConditionCmt(
+    filter: FilterQuery<T>,
+    field?: any,
+    option?: QueryOptions,
+    populate?: string | PopulateOptions | Array<string | PopulateOptions>,
+  ): Promise<T | T[]> {
+    // Thay đổi kiểu trả về để có thể trả về đối tượng hoặc mảng
+    if (populate) {
+      if (typeof populate === 'string') {
+        populate = { path: populate };
+      }
+      return this.model
+        .find(filter, field, option)
+        .populate(populate as PopulateOptions)
+        .exec();
+    }
+    return this.model.find(filter, field, option).exec(); // Trả về mảng hoặc đối tượng tùy vào điều kiện
+  }
 }

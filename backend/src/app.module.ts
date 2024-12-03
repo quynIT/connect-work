@@ -6,11 +6,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import * as dotenv from 'dotenv';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { ProjectModule } from './module/project.module';
+import { TaskModule } from './module/task.module';
+import { CommentModule } from './module/comment.module';
 
 dotenv.config();
 @Module({
   imports: [
     UserModule,
+    ProjectModule,
+    TaskModule,
+    CommentModule,
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGODB_URL),
     MailerModule.forRootAsync({
