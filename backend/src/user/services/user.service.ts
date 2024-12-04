@@ -189,4 +189,21 @@ export class UserService {
       password: hashedPassword,
     });
   }
+  async searchUsers(query: string): Promise<User[]> {
+    try {
+      // Tìm kiếm người dùng có tên hoặc username gần giống với query
+      const users = await this.userRepository.findByConditionAll(
+        {
+          $or: [
+            { name: { $regex: query, $options: 'i' } }, // Tìm kiếm tên (không phân biệt hoa thường)
+            { username: { $regex: query, $options: 'i' } }, // Tìm kiếm username (không phân biệt hoa thường)
+          ],
+        },
+        'id username name avt', // Chỉ lấy id, username, name, avt
+      );
+      return users;
+    } catch (error) {
+      throw new Error(`Error searching users: ${error.message}`);
+    }
+  }
 }

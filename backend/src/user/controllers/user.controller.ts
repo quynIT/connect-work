@@ -7,6 +7,7 @@ import {
   Req,
   UseGuards,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../services/user.service';
@@ -48,5 +49,20 @@ export class UserController {
       oldPassword,
       newPassword,
     );
+  }
+  @Get('/search')
+  async searchUsers(@Query('query') query: string) {
+    try {
+      const users = await this.userService.searchUsers(query);
+      return {
+        success: true,
+        data: users,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
 }

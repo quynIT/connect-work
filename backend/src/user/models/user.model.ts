@@ -21,7 +21,12 @@ const UserSchema = new Schema(
     timestamps: true,
   },
 );
-
+UserSchema.virtual('projects', {
+  ref: 'Project',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: false,
+});
 export { UserSchema };
 
 export interface User extends Document {

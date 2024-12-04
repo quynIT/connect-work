@@ -9,7 +9,7 @@ import { AuthController } from './controllers/auth.controller';
 import { UserRepository } from './repositories/user.repository';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UserController } from './controllers/user.controler';
+import { UserController } from './controllers/user.controller';
 import * as dotenv from 'dotenv';
 import { BullModule } from '@nestjs/bull';
 dotenv.config();

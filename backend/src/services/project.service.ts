@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Project } from '../models/project.model';
+import { Project, ProjectModel } from '../models/project.model';
 import { ProjectRepository } from './repositories/project.repository';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import { Types } from 'mongoose';
@@ -65,5 +65,27 @@ export class ProjectService {
   // Xóa dự án
   async deleteProject(id: string): Promise<any> {
     return await this.projectRepository.deleteOne(id);
+  }
+
+  async getProjectWithMembers(projectId: string) {
+    try {
+      const project = await ProjectModel.findById(projectId)
+        .populate({
+          path: 'members',
+          select: 'name avt',
+        })
+        .lean()
+        .exec();
+
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      console.log('Project fetched:', project); // Log kết quả project để kiểm tra
+      return project;
+    } catch (error) {
+      console.error('Error fetching project:', error.message); // Log lỗi nếu có
+      throw new Error(`Error fetching project: ${error.message}`);
+    }
   }
 }

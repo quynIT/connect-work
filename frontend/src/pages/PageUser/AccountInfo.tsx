@@ -12,7 +12,6 @@ import {
   PhoneIcon,
   CurrencyDollarIcon,
   BanknotesIcon,
-  KeyIcon,
 } from "@heroicons/react/24/solid";
 
 interface UserInfo {
@@ -26,7 +25,6 @@ interface UserInfo {
   phone: string;
   salary: string;
   stk: string;
-  password: string;
   _id?: string;
 }
 
@@ -53,7 +51,6 @@ const AccountInfo: React.FC = () => {
     phone: "",
     salary: "",
     stk: "",
-    password: "",
   });
 
   useEffect(() => {
@@ -313,25 +310,6 @@ const AccountInfo: React.FC = () => {
           />
         </div>
         {errors.stk && <p className="text-red-500">{errors.stk}</p>}
-
-        {/* Password */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <KeyIcon
-            className="w-10 h-10 text-gray-600 mr-2 p-1 bg-gray-100 rounded"
-            style={{ color: "#1da1f2" }}
-          />
-          <input
-            type="password"
-            name="password"
-            value={userInfo.password}
-            onChange={handleChange}
-            disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
-          />
-        </div>
-        {errors.password && <p className="text-red-500">{errors.password}</p>}
       </div>
 
       {/* Button */}
