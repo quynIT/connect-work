@@ -6,10 +6,13 @@ import {
   Body,
   Put,
   Delete,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { TaskService } from '../services/task.service'; // Import TaskService
 import { CreateTaskDto, UpdateTaskDto } from '../services/dto/task.dto'; // Import DTOs
 import { Task } from '../models/task.model'; // Import Task model
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('tasks') // Định nghĩa controller cho các route bắt đầu với '/tasks'
 export class TaskController {
@@ -17,8 +20,9 @@ export class TaskController {
 
   // Tạo công việc mới
   @Post('/create')
-  async createTask(@Body() createTaskDto: CreateTaskDto): Promise<Task> {
-    return this.taskService.createTask(createTaskDto);
+  @UseGuards(AuthGuard('jwt'))
+  async createPost(@Req() req: any, @Body() post: CreateTaskDto) {
+    return this.taskService.createTask(req.user, post);
   }
 
   // Lấy danh sách tất cả công việc
@@ -46,5 +50,9 @@ export class TaskController {
   @Delete('/delete/:id')
   async deleteTask(@Param('id') id: string): Promise<any> {
     return this.taskService.deleteTask(id);
+  }
+  @Get('/list/:id/with-users')
+  async getProjectWithUsers(@Param('id') id: string) {
+    return await this.taskService.getTaskByUser(id);
   }
 }

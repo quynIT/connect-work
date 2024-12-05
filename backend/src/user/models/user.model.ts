@@ -27,6 +27,13 @@ UserSchema.virtual('projects', {
   foreignField: 'user',
   justOne: false,
 });
+
+UserSchema.virtual('tasks', {
+  ref: 'Task',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: false,
+});
 export { UserSchema };
 
 export interface User extends Document {

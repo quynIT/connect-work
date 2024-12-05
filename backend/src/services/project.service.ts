@@ -1,29 +1,27 @@
-import { Injectable } from '@nestjs/common';
-import { Project, ProjectModel } from '../models/project.model';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Project } from '../models/project.model';
 import { ProjectRepository } from './repositories/project.repository';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import { Types } from 'mongoose';
+import { User } from 'src/user/models/user.model';
 
 @Injectable()
 export class ProjectService {
   constructor(private readonly projectRepository: ProjectRepository) {}
 
   // Tạo dự án mới
-  async createProject(createProjectDto: CreateProjectDto): Promise<Project> {
-    // Chuyển đổi members và tasks từ string[] thành ObjectId[] nếu có
-    if (createProjectDto.members) {
-      createProjectDto.members = createProjectDto.members.map(
-        (memberId) => new Types.ObjectId(memberId), // Chuyển từ string sang ObjectId
-      );
+  async createProject(user: User, project: CreateProjectDto) {
+    // Thêm user ID hiện tại vào danh sách users nếu chưa tồn tại
+    if (!project.user) {
+      project.user = [];
     }
-    if (createProjectDto.tasks) {
-      createProjectDto.tasks = createProjectDto.tasks.map(
-        (taskId) => new Types.ObjectId(taskId), // Chuyển từ string sang ObjectId
-      );
-    }
+    project.user.push(user._id.toString());
 
-    // Tạo mới dự án
-    return await this.projectRepository.create(createProjectDto);
+    // Lưu dự án vào cơ sở dữ liệu
+    const newProject = await this.projectRepository.create(
+      project as unknown as Partial<Project>,
+    );
+    return newProject;
   }
 
   // Lấy tất cả các dự án
@@ -44,22 +42,33 @@ export class ProjectService {
   // Cập nhật dự án
   async updateProject(
     id: string,
-    updateProjectDto: UpdateProjectDto,
-  ): Promise<Project | null> {
-    // Chuyển đổi members và tasks từ string[] thành ObjectId[] nếu có
-    if (updateProjectDto.members) {
-      updateProjectDto.members = updateProjectDto.members.map(
-        (memberId) => new Types.ObjectId(memberId), // Chuyển từ string sang ObjectId
-      );
-    }
-    if (updateProjectDto.tasks) {
-      updateProjectDto.tasks = updateProjectDto.tasks.map(
-        (taskId) => new Types.ObjectId(taskId), // Chuyển từ string sang ObjectId
-      );
+    updateData: UpdateProjectDto,
+  ): Promise<Project> {
+    // Check if the project exists
+    const existingProject = await this.projectRepository.findById(id);
+    if (!existingProject) {
+      throw new NotFoundException(`Project with id ${id} not found`);
     }
 
-    // Cập nhật dự án
-    return await this.projectRepository.findByIdAndUpdate(id, updateProjectDto);
+    // Update project fields
+    if (updateData.user) {
+      // Convert user from string[] to ObjectId[] if needed
+      updateData.user = updateData.user.map(
+        (userId) => new Types.ObjectId(userId),
+      ) as unknown as string[];
+    }
+
+    // Update project in the database
+    const updatedProject = await this.projectRepository.findByIdAndUpdate(
+      id,
+      updateData as unknown as Partial<Project>,
+    );
+
+    if (!updatedProject) {
+      throw new NotFoundException(`Failed to update project with id ${id}`);
+    }
+
+    return updatedProject;
   }
 
   // Xóa dự án
@@ -67,25 +76,20 @@ export class ProjectService {
     return await this.projectRepository.deleteOne(id);
   }
 
-  async getProjectWithMembers(projectId: string) {
-    try {
-      const project = await ProjectModel.findById(projectId)
-        .populate({
-          path: 'members',
-          select: 'name avt',
-        })
-        .lean()
-        .exec();
+  async getProjectByUser(project_id: string) {
+    // Sử dụng await để lấy đối tượng Project
+    const project = await this.projectRepository.findById(project_id);
 
-      if (!project) {
-        throw new Error('Project not found');
-      }
+    if (project) {
+      // Gọi populate trên đối tượng project sau khi đã lấy được
+      await project.populate({
+        path: 'user', // Populate các trường trong mảng 'user'
+        select: 'name avt', // Chỉ lấy các trường 'name' và 'avt'
+      });
 
-      console.log('Project fetched:', project); // Log kết quả project để kiểm tra
-      return project;
-    } catch (error) {
-      console.error('Error fetching project:', error.message); // Log lỗi nếu có
-      throw new Error(`Error fetching project: ${error.message}`);
+      return project; // Project đã được populate thông tin các user
+    } else {
+      throw new NotFoundException(`Project with id ${project_id} not found`);
     }
   }
 }

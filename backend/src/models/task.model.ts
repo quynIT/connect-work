@@ -1,11 +1,12 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import { User } from 'src/user/models/user.model';
 
 const TaskSchema = new Schema(
   {
     name: { type: String, required: true },
     description: { type: String, default: null },
-    projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
-    assignedTo: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
+    projectId: { type: Schema.Types.ObjectId, ref: 'Project' },
+    user: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     status: {
       type: String,
       enum: ['Pending', 'In Progress', 'Completed'],
@@ -26,7 +27,7 @@ export interface Task extends Document {
   name: string;
   description?: string;
   projectId: Types.ObjectId;
-  assignedTo: Types.ObjectId[];
+  user?: [User];
   status: string;
   dueDate?: Date;
 }

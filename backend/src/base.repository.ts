@@ -38,14 +38,17 @@ export class BaseRepository<T extends Document> {
     return this.model.findOne(filter, field, option).exec();
   }
 
-  //   async getByCondition(
-  //     filter: FilterQuery<T>,
-  //     field?: any,
-  //     option?: QueryOptions,
-  //     populate?: string | object,
-  //   ): Promise<T[]> {
-  //     return this.model.find(filter, field, option).populate(populate).exec();
-  //   }
+  async getByCondition(
+    filter: FilterQuery<T>,
+    field?: any | null,
+    option?: any | null,
+    populate?: any | null,
+  ): Promise<T[]> {
+    return this.model
+      .find(filter, field, option)
+      .populate(populate)
+      .exec() as Promise<T[]>;
+  }
 
   async findAll(): Promise<T[]> {
     return this.model.find().exec();

@@ -1,26 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { TaskRepository } from './repositories/task.repository'; // Import TaskRepository
 import { CreateTaskDto, UpdateTaskDto } from './dto/task.dto'; // Import DTOs
 import { Task } from '../models/task.model'; // Import Task model
 import { Types } from 'mongoose';
+import { User } from 'src/user/models/user.model';
 
 @Injectable()
 export class TaskService {
   constructor(private readonly taskRepository: TaskRepository) {}
 
   // Tạo công việc mới
-  async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
-    // Convert IDs in the assignedTo array to ObjectId
-    const taskData: Partial<Task> = {
-      ...createTaskDto,
-      assignedTo: createTaskDto.assignedTo?.map(
-        (id) => new Types.ObjectId(id), // Chuyển trực tiếp sang ObjectId mà không cần ép kiểu any
-      ),
-    };
+  async createTask(user: User, task: CreateTaskDto) {
+    if (!task.user) {
+      task.user = [];
+    }
+    task.user.push(user._id.toString());
 
-    // Save task to the database
-    const task = await this.taskRepository.create(taskData);
-    return task;
+    // Lưu dự án vào cơ sở dữ liệu
+    const newProject = await this.taskRepository.create(
+      task as unknown as Partial<Task>,
+    );
+    return newProject;
   }
 
   // Lấy danh sách tất cả công việc
@@ -38,20 +38,31 @@ export class TaskService {
   }
 
   // Cập nhật thông tin công việc theo ID
-  async updateTask(id: string, updateTaskDto: UpdateTaskDto): Promise<Task> {
-    const updateData: Partial<Task> = {
-      ...updateTaskDto,
-      assignedTo: updateTaskDto.assignedTo?.map((id) => new Types.ObjectId(id)),
-    };
-
-    const updatedTask = await this.taskRepository.findByIdAndUpdate(
-      id,
-      updateData,
-    );
-    if (!updatedTask) {
-      throw new Error('Task not found');
+  async updateTask(id: string, updateData: UpdateTaskDto): Promise<Task> {
+    const existingProject = await this.taskRepository.findById(id);
+    if (!existingProject) {
+      throw new NotFoundException(`Project with id ${id} not found`);
     }
-    return updatedTask;
+
+    // Update project fields
+    if (updateData.user) {
+      // Convert user from string[] to ObjectId[] if needed
+      updateData.user = updateData.user.map(
+        (userId) => new Types.ObjectId(userId),
+      ) as unknown as string[];
+    }
+
+    // Update project in the database
+    const updatedProject = await this.taskRepository.findByIdAndUpdate(
+      id,
+      updateData as unknown as Partial<Task>,
+    );
+
+    if (!updatedProject) {
+      throw new NotFoundException(`Failed to update project with id ${id}`);
+    }
+
+    return updatedProject;
   }
 
   // Xóa công việc theo ID
@@ -61,5 +72,21 @@ export class TaskService {
       throw new Error('Task not found');
     }
     return deletedTask;
+  }
+  async getTaskByUser(task_id: string) {
+    // Sử dụng await để lấy đối tượng Project
+    const task = await this.taskRepository.findById(task_id);
+
+    if (task) {
+      // Gọi populate trên đối tượng project sau khi đã lấy được
+      await task.populate({
+        path: 'user', // Populate các trường trong mảng 'user'
+        select: 'name avt', // Chỉ lấy các trường 'name' và 'avt'
+      });
+
+      return task; // Project đã được populate thông tin các user
+    } else {
+      throw new NotFoundException(`Project with id ${task_id} not found`);
+    }
   }
 }

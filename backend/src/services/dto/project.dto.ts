@@ -6,8 +6,9 @@ export class CreateProjectDto {
   @IsOptional() url?: string;
   @IsOptional() description?: string;
   @IsNotEmpty() projectCategory: string;
-  @IsOptional() members?: Types.ObjectId[]; // Array of ObjectIds
+  @IsOptional() user: string[]; // Array of ObjectIds
   @IsOptional() tasks?: Types.ObjectId[]; // Array of ObjectIds
+  @IsNotEmpty() createdBy: string;
 }
 
 export class UpdateProjectDto {
@@ -15,6 +16,7 @@ export class UpdateProjectDto {
   @IsOptional() url?: string;
   @IsOptional() description?: string;
   @IsOptional() projectCategory?: string;
-  @IsOptional() members?: Types.ObjectId[];
+  @IsOptional() user: string[];
   @IsOptional() tasks?: Types.ObjectId[];
+  @IsOptional() createdBy?: string;
 }

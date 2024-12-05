@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import { User } from 'src/user/models/user.model';
 
 const ProjectSchema = new Schema(
   {
@@ -6,8 +7,9 @@ const ProjectSchema = new Schema(
     url: { type: String, default: null },
     description: { type: String, default: null },
     projectCategory: { type: String, required: true },
-    members: [{ type: Schema.Types.ObjectId, ref: 'User' }], // References to User
+    user: [{ type: Schema.Types.ObjectId, ref: 'User' }], // References to User
     tasks: [{ type: Schema.Types.ObjectId, ref: 'Task' }], // References to Task
+    createdBy: { type: String, required: true },
   },
   {
     collection: 'projects',
@@ -22,6 +24,7 @@ export interface Project extends Document {
   url?: string;
   description?: string;
   projectCategory: string;
-  members?: Types.ObjectId[];
+  user?: [User];
   tasks?: Types.ObjectId[];
+  createdBy: string;
 }
