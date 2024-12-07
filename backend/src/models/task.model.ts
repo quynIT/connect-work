@@ -9,8 +9,8 @@ const TaskSchema = new Schema(
     user: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     status: {
       type: String,
-      enum: ['Pending', 'In Progress', 'Completed'],
-      default: 'Pending',
+      enum: ['To Do', 'In Progress', 'In Review', 'Done'],
+      default: 'To Do',
     },
     dueDate: { type: Date, default: null }, // Trường để lưu các comment liên quan
   },

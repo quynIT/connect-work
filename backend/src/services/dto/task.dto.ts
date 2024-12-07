@@ -6,7 +6,7 @@ export class CreateTaskDto {
   @IsOptional() description?: string;
   @IsNotEmpty() projectId: Types.ObjectId; // ID của dự án
   @IsNotEmpty() user?: string[]; // Nhận mảng chuỗi từ client
-  @IsEnum(['Pending', 'In Progress', 'Completed']) status: string;
+  @IsEnum(['To Do', 'In Progress', 'In Review', 'Done']) status: string;
   @IsOptional() dueDate?: Date;
 }
 

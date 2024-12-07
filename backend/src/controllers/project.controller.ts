@@ -39,7 +39,7 @@ export class ProjectController {
   // Lấy chi tiết dự án theo ID
   @Get('/detail/:id')
   async getProjectById(@Param('id') id: string): Promise<Project> {
-    return this.projectService.getProjectById(id);
+    return this.projectService.getProjectByUser(id);
   }
 
   // Cập nhật thông tin dự án theo ID

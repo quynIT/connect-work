@@ -30,7 +30,7 @@ export const routes = [
     page: Calendar,
   },
   {
-    path: "/task-board",
+    path: "/task-board/:projectId",
     page: KanbanBoard,
   },
   {

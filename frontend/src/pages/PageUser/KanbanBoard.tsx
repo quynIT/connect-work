@@ -1,16 +1,217 @@
-import React from "react";
-import {
-  FaPlus,
-  FaEllipsisV,
-  FaFilter,
-  FaArrowDown,
-  FaArrowUp,
-} from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { FaPlus, FaEllipsisV, FaFilter } from "react-icons/fa";
+import { Editor } from "@tinymce/tinymce-react";
+
+interface User {
+  _id: string;
+  name: string;
+  avt: string;
+}
+
+interface Task {
+  _id: string;
+  name: string;
+  description: string;
+  projectId: string;
+  user: User[];
+  status: string;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+interface TaskForm {
+  name: string;
+  description: string;
+  user: string[];
+  status: string;
+  projectId: string;
+  type: string;
+  dueDate: number;
+}
 
 const KanbanBoard: React.FC = () => {
+  const { projectId } = useParams(); // Lấy idProject từ URL
+  const [tasks, setTasks] = useState<Task[]>([]); // Lưu trữ danh sách task
+  const [searchTerm, setSearchTerm] = useState(""); // Lưu giá trị tìm kiếm
+  const [searchResults, setSearchResults] = useState<Task[] | null>(null); // Kết quả tìm kiếm
+  const [loading, setLoading] = useState(true); // Hiển thị trạng thái loading
+  const [isModalOpen, setIsModalOpen] = useState(false); // Trạng thái modal
+  const [users, setUsers] = useState<User[]>([]);
+  const [newTask, setNewTask] = useState<TaskForm>({
+    name: "",
+    description: "",
+    user: [], // Khởi tạo là mảng rỗng
+    status: "",
+    projectId: projectId || "",
+    type: "",
+    dueDate: 0,
+  });
+  // Gọi API để lấy task theo projectId
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/tasks/project/${projectId}`
+        );
+        const data = await response.json();
+        setTasks(data); // Cập nhật task vào state
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu task:", error);
+      } finally {
+        setLoading(false); // Kết thúc trạng thái loading
+      }
+    };
+
+    fetchTasks();
+  }, [projectId]);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          console.error("Không có accessToken.");
+          return;
+        }
+        const response = await fetch("http://localhost:3000/user/list", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`, // Thêm token vào header Authorization
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Lỗi khi lấy dữ liệu người dùng.");
+        }
+        const data = await response.json();
+        setUsers(data);
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // Phân loại task theo status
+  const categorizedTasks = {
+    "To Do": (searchResults || tasks).filter((task) => task.status === "To Do"),
+    "In Progress": (searchResults || tasks).filter(
+      (task) => task.status === "In Progress"
+    ),
+    "In Review": (searchResults || tasks).filter(
+      (task) => task.status === "In Review"
+    ),
+    Done: (searchResults || tasks).filter((task) => task.status === "Done"),
+  };
+
+  // Hàm xử lý tìm kiếm
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      setSearchResults(null); // Nếu ô tìm kiếm trống, hiển thị lại tất cả tasks
+      return;
+    }
+
+    try {
+      setLoading(true); // Bật trạng thái loading
+      const response = await fetch(
+        `http://localhost:3000/tasks/search?name=${searchTerm}`
+      );
+      const data = await response.json();
+      setSearchResults(data); // Cập nhật kết quả tìm kiếm vào state
+    } catch (error) {
+      console.error("Lỗi khi tìm kiếm task:", error);
+    } finally {
+      setLoading(false); // Tắt trạng thái loading
+    }
+  };
+  const handleEditorChange = (content: string) => {
+    setNewTask((prev) => ({
+      ...prev,
+      description: content,
+    }));
+  };
+  // Hàm mở và đóng modal
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+  // Hàm xử lý khi nhập dữ liệu trong form
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value } = e.target;
+
+    if (name === "user") {
+      // Tách chuỗi thành mảng ID người dùng
+      const userIds = value.split(",").map((item) => item.trim()); // Tách theo dấu phẩy và loại bỏ khoảng trắng
+      setNewTask((prev) => ({
+        ...prev,
+        [name]: userIds, // Lưu vào mảng user
+      }));
+    } else {
+      setNewTask((prev) => ({
+        ...prev,
+        [name]: value, // Xử lý các trường khác như bình thường
+      }));
+    }
+  };
+  // Hàm xử lý tạo task mới
+  const handleCreateTask = async () => {
+    try {
+      // Lấy accessToken từ localStorage
+      const accessToken = localStorage.getItem("accessToken");
+
+      if (!accessToken) {
+        console.error("Không có accessToken.");
+        return;
+      }
+
+      // Gửi yêu cầu tạo task với token xác thực
+      const response = await fetch(`http://localhost:3000/tasks/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`, // Thêm token vào headers
+        },
+        body: JSON.stringify({ ...newTask, projectId }), // Dữ liệu gửi kèm sẽ có projectId từ URL
+      });
+
+      if (response.ok) {
+        const createdTask = await response.json();
+        setTasks((prev) => [...prev, createdTask]); // Thêm task mới vào danh sách
+        closeModal(); // Đóng modal sau khi tạo thành công
+      } else {
+        console.error("Lỗi khi tạo task mới:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tạo task mới:", error);
+    }
+  };
+
+  // Hàm render các task theo cột
+  const renderTasks = (status: keyof typeof categorizedTasks) =>
+    categorizedTasks[status].map((task) => (
+      <div key={task._id} className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
+        <p className="text-gray-800 font-medium">{task.name}</p>
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex space-x-2">
+            {task.user.map((user) => (
+              <img
+                key={user._id}
+                src={user.avt}
+                alt={user.name}
+                className="w-8 h-8 rounded-full"
+                title={user.name}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    ));
+
   return (
     <div
-      className="mt-20 p-6  min-h-screen"
+      className="mt-20 p-6 min-h-screen"
       style={{ backgroundColor: "#f7fafd" }}
     >
       {/* Header */}
@@ -21,141 +222,209 @@ const KanbanBoard: React.FC = () => {
         <button
           className="flex items-center px-4 py-2 text-gray-800 font-lexend rounded-xl hover:bg-green-600"
           style={{ backgroundColor: "#52e052" }}
+          onClick={openModal}
         >
           <FaPlus className="mr-2" />
           New Task
         </button>
       </div>
 
+      {/* Modal for creating task */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-5xl w-full">
+            <h2 className="text-2xl font-bold mb-4">Create Task</h2>
+            <form className="flex flex-wrap">
+              {/* Left Column */}
+              <div className="w-full sm:w-1/2 pr-4">
+                {/* Task Name */}
+                <label className="block mb-2 font-medium">Task Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={newTask.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter task name..."
+                  className="w-full p-2 border rounded-lg mb-4"
+                />
+
+                {/* Status */}
+                <label className="block mb-2 font-medium">Status</label>
+                <select
+                  name="status"
+                  value={newTask.status}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded-lg mb-4"
+                >
+                  <option value="">Select status</option>
+                  <option value="To Do">To Do</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="In Review">In Review</option>
+                  <option value="Done">Done</option>
+                </select>
+
+                {/* Due Date */}
+                <label className="block mb-2 font-medium">Due Date</label>
+                <input
+                  type="date"
+                  name="dueDate"
+                  value={newTask.dueDate ? newTask.dueDate : ""}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded-lg mb-4"
+                />
+
+                {/* Members Input */}
+                <label className="block mb-2 font-medium">Members</label>
+                <input
+                  type="text"
+                  name="user"
+                  value={
+                    newTask.user && Array.isArray(newTask.user)
+                      ? newTask.user.join(", ") // Nối các ID người dùng thành chuỗi ngăn cách bằng dấu phẩy
+                      : ""
+                  }
+                  onChange={handleInputChange}
+                  placeholder="Enter user IDs (comma separated)"
+                  className="w-full p-2 border rounded-lg mb-4"
+                />
+              </div>
+
+              {/* Right Column */}
+              <div className="w-full sm:w-1/2 pl-4">
+                {/* Project Description */}
+                <label className="block mb-2 font-medium">
+                  Project Description
+                </label>
+                <Editor
+                  apiKey="ukbx68ea6fmdx70aa0i1xe2qpekdqjmf3p540yemmh7lsorc"
+                  initialValue={newTask.description}
+                  init={{
+                    height: 300,
+                    menubar: false,
+                    plugins: [
+                      "advlist autolink lists link image charmap print preview anchor",
+                      "searchreplace visualblocks code fullscreen",
+                      "insertdatetime media table paste code help wordcount",
+                    ],
+                    toolbar:
+                      "undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help",
+                  }}
+                  onEditorChange={handleEditorChange}
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-between w-full mt-4">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-gray-300 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateTask}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg"
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Search and Filters */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
           <input
             type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search tasks..."
             className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400"
           />
-          <button className="flex items-center px-3 py-2 border border-gray-300 rounded-xl text-gray-600 hover:text-gray-800">
-            <FaFilter className="mr-2" />
+          <button
+            onClick={handleSearch}
+            className="flex items-center px-3 py-2 border border-gray-300 rounded-xl text-gray-600 hover:text-gray-800"
+          >
+            <FaEllipsisV className="mr-2" />
             Quick Filters
           </button>
         </div>
       </div>
 
       {/* Columns */}
-      <div className="grid grid-cols-4 gap-4">
-        {/* Column 1 */}
-        <div
-          className=" rounded-xl shadow-md p-4"
-          style={{ backgroundColor: "#ecf2f9" }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-lexend" style={{ color: "#6366f1" }}>
-              ● To Do (2)
-            </h2>
-            <button className="text-gray-500 hover:text-gray-800">
-              <FaEllipsisV />
-            </button>
+      {loading ? (
+        <div>Loading tasks...</div>
+      ) : (
+        <div className="grid grid-cols-4 gap-4">
+          {/* Column 1 */}
+          <div
+            className="rounded-xl shadow-md p-4"
+            style={{ backgroundColor: "#ecf2f9" }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-lexend" style={{ color: "#6366f1" }}>
+                ● To Do ({categorizedTasks["To Do"].length})
+              </h2>
+              <button className="text-gray-500 hover:text-gray-800">
+                <FaEllipsisV />
+              </button>
+            </div>
+            {renderTasks("To Do")}
           </div>
 
-          {/* Task 1 */}
-          <div className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-lexend text-blue-600">FE</span>
+          {/* Column 2 */}
+          <div
+            className="rounded-xl shadow-md p-4"
+            style={{ backgroundColor: "#ecf2f9" }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-lexend" style={{ color: "#f59e0b" }}>
+                ● In Progress ({categorizedTasks["In Progress"].length})
+              </h2>
+              <button className="text-gray-500 hover:text-gray-800">
+                <FaEllipsisV />
+              </button>
             </div>
-            <p className="text-gray-800 font-medium">fe</p>
-            <div className="flex justify-between items-center mt-4">
-              <div className="flex space-x-2">
-                <button className="text-purple-500 hover:text-purple-600">
-                  <FaArrowDown />
-                </button>
-                <button className="text-purple-500 hover:text-purple-600">
-                  <FaArrowUp />
-                </button>
-              </div>
-              <div className="flex space-x-1">
-                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
-                  H
-                </span>
-                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
-                  AA
-                </span>
-              </div>
-            </div>
+            {renderTasks("In Progress")}
           </div>
 
-          {/* Task 2 */}
-          <div className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-lexend text-blue-600">FE</span>
+          {/* Column 3 */}
+          <div
+            className="rounded-xl shadow-md p-4"
+            style={{ backgroundColor: "#ecf2f9" }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-lexend" style={{ color: "#f43f5e" }}>
+                ● In Review ({categorizedTasks["In Review"].length})
+              </h2>
+              <button className="text-gray-500 hover:text-gray-800">
+                <FaEllipsisV />
+              </button>
             </div>
-            <p className="text-gray-800 font-medium">fe</p>
-            <div className="flex justify-between items-center mt-4">
-              <div className="flex space-x-2">
-                <button className="text-purple-500 hover:text-purple-600">
-                  <FaArrowDown />
-                </button>
-                <button className="text-purple-500 hover:text-purple-600">
-                  <FaArrowUp />
-                </button>
-              </div>
-              <div className="flex space-x-1">
-                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
-                  H
-                </span>
-                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
-                  AA
-                </span>
-              </div>
+            {renderTasks("In Review")}
+          </div>
+
+          {/* Column 4 */}
+          <div
+            className="rounded-xl shadow-md p-4"
+            style={{ backgroundColor: "#ecf2f9" }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-lexend" style={{ color: "#10b981" }}>
+                ● Done ({categorizedTasks["Done"].length})
+              </h2>
+              <button className="text-gray-500 hover:text-gray-800">
+                <FaEllipsisV />
+              </button>
             </div>
+            {renderTasks("Done")}
           </div>
         </div>
-
-        {/* Column 2 */}
-        <div
-          className=" rounded-xl shadow-md p-4"
-          style={{ backgroundColor: "#ecf2f9" }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-lexend" style={{ color: "#f59e0b" }}>
-              ● In Progress (0)
-            </h2>
-            <button className="text-gray-500 hover:text-gray-800">
-              <FaEllipsisV />
-            </button>
-          </div>
-        </div>
-
-        {/* Column 3 */}
-        <div
-          className=" rounded-xl shadow-md p-4"
-          style={{ backgroundColor: "#ecf2f9" }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-lexend " style={{ color: "#f43f5e" }}>
-              ● In Review (0)
-            </h2>
-            <button className="text-gray-500 hover:text-gray-800">
-              <FaEllipsisV />
-            </button>
-          </div>
-        </div>
-
-        {/* Column 4 */}
-        <div
-          className=" rounded-xl shadow-md p-4"
-          style={{ backgroundColor: "#ecf2f9" }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-lexend " style={{ color: "#10b981" }}>
-              ● Done (0)
-            </h2>
-            <button className="text-gray-500 hover:text-gray-800">
-              <FaEllipsisV />
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { TaskService } from '../services/task.service'; // Import TaskService
 import { CreateTaskDto, UpdateTaskDto } from '../services/dto/task.dto'; // Import DTOs
@@ -30,7 +31,10 @@ export class TaskController {
   async getAllTasks(): Promise<Task[]> {
     return this.taskService.getAllTasks();
   }
-
+  @Get('/search')
+  async searchTasksByName(@Query('name') name: string) {
+    return await this.taskService.findTasksByName(name);
+  }
   // Lấy chi tiết công việc theo ID
   @Get(':id')
   async getTaskById(@Param('id') id: string): Promise<Task> {
@@ -54,5 +58,9 @@ export class TaskController {
   @Get('/list/:id/with-users')
   async getProjectWithUsers(@Param('id') id: string) {
     return await this.taskService.getTaskByUser(id);
+  }
+  @Get('project/:projectId')
+  async getTasksByProjectId(@Param('projectId') projectId: string) {
+    return await this.taskService.getTasksByProjectId(projectId);
   }
 }

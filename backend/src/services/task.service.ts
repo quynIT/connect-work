@@ -89,4 +89,34 @@ export class TaskService {
       throw new NotFoundException(`Project with id ${task_id} not found`);
     }
   }
+  async getTasksByProjectId(projectId: string): Promise<Task[]> {
+    try {
+      // Sử dụng `findByCondition` để lấy các task liên kết với projectId
+      const tasks = await this.taskRepository.getByCondition(
+        { projectId }, // Điều kiện lọc
+        null, // Không giới hạn trường
+        null, // Không cần option đặc biệt
+        { path: 'user', select: 'name avt' }, // Populate thông tin user
+      );
+      return tasks;
+    } catch (e) {
+      throw new NotFoundException(
+        `Tasks for project with id ${projectId} not found.`,
+      );
+    }
+  }
+  // Tìm kiếm task theo tên
+  async findTasksByName(taskName: string): Promise<Task[]> {
+    try {
+      const tasks = await this.taskRepository.getByCondition(
+        { name: { $regex: taskName, $options: 'i' } }, // Điều kiện lọc theo tên
+        null, // Không giới hạn trường
+        null, // Không cần option đặc biệt
+        { path: 'user', select: 'name avt' }, // Populate thông tin user
+      );
+      return tasks;
+    } catch (e) {
+      throw new NotFoundException(`No tasks found matching name: ${taskName}`);
+    }
+  }
 }

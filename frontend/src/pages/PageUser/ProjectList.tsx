@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa";
 import { Editor } from "@tinymce/tinymce-react";
 import { FaEye, FaEdit, FaTrashAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 interface User {
   _id: string;
@@ -29,10 +30,12 @@ interface NewProjectPayload {
 }
 
 const ProjectList: React.FC = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -43,11 +46,13 @@ const ProjectList: React.FC = () => {
     name: "",
     description: "",
     projectCategory: "",
-    member: "",
+    memberSearch: "", // Thêm thuộc tính này
+    member: [], // Sử dụng mảng để lưu ID của các thành viên đã chọn
     url: "",
     createdBy: "",
   });
 
+  const [viewingProject, setViewingProject] = useState<any | null>(null);
   const handleEditorChange = (content: string) => {
     setNewProject((prev) => ({ ...prev, description: content }));
   };
@@ -126,6 +131,10 @@ const ProjectList: React.FC = () => {
       fetchUserProfile();
     }
   }, [showModal, formMode]);
+  const handleNavigateToTask = (projectId) => {
+    // Chuyển hướng đến trang task với projectId
+    navigate(`/task-board/${projectId}`);
+  };
   // Handle search input change
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -139,7 +148,7 @@ const ProjectList: React.FC = () => {
   // Handle search for users (for Add Member input)
   const handleUserSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    setNewProject({ ...newProject, member: value });
+    setNewProject({ ...newProject, memberSearch: value }); // Cập nhật memberSearch
 
     const filtered = users.filter((user) =>
       user.name.toLowerCase().includes(value.toLowerCase())
@@ -148,12 +157,12 @@ const ProjectList: React.FC = () => {
   };
   // Select user for the project
   const handleUserSelect = (userId: string) => {
+    setNewProject((prev) => ({
+      ...prev,
+      memberSearch: "", // Reset search value after selection
+    }));
     setSelectedUsers((prev) => [...prev, userId]);
-    setNewProject({
-      ...newProject,
-      member: "", // Reset the input after selecting user
-    });
-    setFilteredUsers([]); // Clear the user list after selection
+    setFilteredUsers([]); // Clear filtered users list
   };
   // Hàm xóa người dùng khỏi danh sách đã chọn
   const handleRemoveUser = (userId: string) => {
@@ -162,13 +171,18 @@ const ProjectList: React.FC = () => {
   // Toggle modal visibility
   const toggleModal = () => setShowModal(!showModal);
 
+  const toggleViewModal = () => {
+    setViewingProject(null); // Xóa dữ liệu dự án đang xem
+    setShowViewModal(!showViewModal); // Đảo trạng thái hiển thị
+  };
   // Open Create form
   const handleCreate = () => {
     setNewProject({
       name: "",
       description: "",
       projectCategory: "",
-      member: "",
+      memberSearch: "", // Thêm memberSearch với giá trị mặc định
+      member: [],
       url: "",
       createdBy: "",
     });
@@ -188,6 +202,7 @@ const ProjectList: React.FC = () => {
         description: project.description,
         projectCategory: project.projectCategory,
         member: project.user.map((u: User) => u._id).join(","),
+        memberSearch: "",
         url: project.url,
         createdBy: project.createdBy,
       });
@@ -211,11 +226,12 @@ const ProjectList: React.FC = () => {
         description: project.description,
         projectCategory: project.projectCategory,
         member: project.user.map((u: User) => u._id).join(","),
+        memberSearch: "",
         url: project.url,
         createdBy: project.createdBy,
       });
-      setFormMode("view");
-      setShowModal(true);
+      setViewingProject(project); // Lưu dự án cần xem chi tiết
+      setShowViewModal(true);
     } catch (error) {
       console.error("Error fetching project detail:", error);
     }
@@ -229,7 +245,7 @@ const ProjectList: React.FC = () => {
       name: newProject.name,
       description: newProject.description,
       projectCategory: newProject.projectCategory,
-      user: selectedUsers,
+      user: selectedUsers, // Lấy các ID thành viên đã chọn
       url: newProject.url,
       createdBy: newProject.createdBy,
     };
@@ -268,6 +284,7 @@ const ProjectList: React.FC = () => {
       console.error("Error submitting project:", error);
     }
   };
+
   const handleDelete = async (projectId: string) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this project?"
@@ -343,7 +360,12 @@ const ProjectList: React.FC = () => {
           <tbody>
             {filteredProjects.map((project) => (
               <tr key={project._id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">{project.name}</td>
+                <td
+                  className="px-4 py-2"
+                  onClick={() => handleNavigateToTask(project._id)}
+                >
+                  {project.name}
+                </td>
                 <td className="px-4 py-2">{project.projectCategory}</td>
                 <td className="px-4 py-2">
                   <div className="flex items-center space-x-2">
@@ -396,201 +418,256 @@ const ProjectList: React.FC = () => {
         >
           <div
             className="bg-white rounded-lg shadow-xl w-full max-w-5xl"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()} // Ngăn sự kiện click từ bubble lên modal
           >
             <div className="p-6">
+              {/* Header */}
               <h2 className="text-xl font-bold mb-4">
                 {formMode === "create"
                   ? "Create Project"
                   : formMode === "update"
                   ? "Update Project"
-                  : "View Project"}
+                  : ""}
               </h2>
-              <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
-                {/* Left column */}
-                <div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700">Project Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={newProject.name}
-                      readOnly={formMode === "view"}
-                      onChange={(e) =>
-                        setNewProject({ ...newProject, name: e.target.value })
-                      }
-                      className={`w-full px-4 py-2 border rounded-lg ${
-                        formMode === "view" ? "bg-gray-100" : ""
-                      }`}
-                      placeholder="Project Name"
-                      required={formMode !== "view"}
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700">Add Member</label>
-                    <input
-                      type="text"
-                      name="member"
-                      value={newProject.member}
-                      readOnly={formMode === "view"}
-                      onChange={handleUserSearch} // Function to handle user search
-                      className={`w-full px-4 py-2 border rounded-lg ${
-                        formMode === "view" ? "bg-gray-100" : ""
-                      }`}
-                      placeholder="Search members..."
-                    />
-                    <ul className="mt-2 max-h-40 overflow-y-auto">
-                      {filteredUsers.map(
-                        (user) =>
-                          !selectedUsers.includes(user._id) && (
-                            <li
-                              key={user._id}
-                              onClick={() => handleUserSelect(user._id)}
-                              className="cursor-pointer px-2 py-1 hover:bg-gray-200 flex items-center"
-                            >
-                              <img
-                                src={user.avt} // Hiển thị ảnh đại diện
-                                alt={user.name}
-                                className="w-8 h-8 rounded-full mr-2"
-                              />
-                              {user.name}
-                            </li>
-                          )
-                      )}
-                    </ul>
 
-                    {/* Hiển thị các người dùng đã chọn */}
-                    <div className="mt-4">
-                      {selectedUsers.map((userId) => {
-                        const selectedUser = users.find(
-                          (user) => user._id === userId
-                        );
-                        return (
-                          selectedUser && (
-                            <div
-                              key={userId}
-                              className="flex items-center justify-between mt-2 px-4 py-2 bg-gray-100 rounded-lg"
-                            >
-                              <span>{selectedUser.name}</span>
-                              <button
-                                onClick={() => handleRemoveUser(userId)}
-                                className="text-red-500 hover:text-red-700"
+              {/* Form Create/Update */}
+              {formMode !== "view" && (
+                <form
+                  onSubmit={handleSubmit}
+                  className="grid grid-cols-2 gap-6"
+                >
+                  {/* Left column */}
+                  <div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700">
+                        Project Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={newProject.name}
+                        onChange={(e) =>
+                          setNewProject({ ...newProject, name: e.target.value })
+                        }
+                        className="w-full px-4 py-2 border rounded-lg"
+                        placeholder="Project Name"
+                        required
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-gray-700">Add Member</label>
+                      <input
+                        type="text"
+                        name="memberSearch"
+                        value={newProject.memberSearch || ""}
+                        onChange={handleUserSearch} // Sử dụng handleUserSearch để tìm kiếm
+                        className="w-full px-4 py-2 border rounded-lg"
+                        placeholder="Search members..."
+                      />
+                      {/* Only display the list if the user types something */}
+                      {newProject.memberSearch && (
+                        <ul className="mt-2 max-h-40 overflow-y-auto absolute z-10 bg-white shadow-md rounded-lg w-[430px]">
+                          {filteredUsers
+                            .filter(
+                              (user) =>
+                                !newProject.member.includes(user._id) && // Loại trừ các user đã có trong project
+                                user.name
+                                  .toLowerCase()
+                                  .includes(
+                                    newProject.memberSearch.toLowerCase()
+                                  ) // Tìm kiếm thành viên
+                            )
+                            .map((user) => (
+                              <li
+                                key={user._id}
+                                onClick={() => handleUserSelect(user._id)}
+                                className="cursor-pointer px-2 py-1 hover:bg-gray-200 flex items-center"
                               >
-                                Remove
-                              </button>
-                            </div>
-                          )
-                        );
-                      })}
+                                <img
+                                  src={user.avt}
+                                  alt={user.name}
+                                  className="w-8 h-8 rounded-full mr-2"
+                                />
+                                {user.name}
+                              </li>
+                            ))}
+                        </ul>
+                      )}
+
+                      <div className="mt-4">
+                        {selectedUsers.map((userId) => {
+                          const selectedUser = users.find(
+                            (user) => user._id === userId
+                          );
+                          return (
+                            selectedUser && (
+                              <div
+                                key={userId}
+                                className="flex items-center justify-between mt-2 px-4 py-2 bg-gray-100 rounded-lg"
+                              >
+                                <img
+                                  src={selectedUser.avt}
+                                  alt={selectedUser.name}
+                                  className="w-8 h-8 rounded-full mr-2"
+                                />
+                                <span>{selectedUser.name}</span>
+                                <button
+                                  onClick={() => handleRemoveUser(userId)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            )
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-gray-700">Project URL</label>
+                      <input
+                        type="url"
+                        name="url"
+                        value={newProject.url}
+                        onChange={(e) =>
+                          setNewProject({ ...newProject, url: e.target.value })
+                        }
+                        className="w-full px-4 py-2 border rounded-lg"
+                        placeholder="Project URL"
+                      />
                     </div>
                   </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700">Project URL</label>
-                    <input
-                      type="url"
-                      name="url"
-                      value={newProject.url}
-                      readOnly={formMode === "view"}
-                      onChange={(e) =>
-                        setNewProject({ ...newProject, url: e.target.value })
-                      }
-                      className={`w-full px-4 py-2 border rounded-lg ${
-                        formMode === "view" ? "bg-gray-100" : ""
-                      }`}
-                      placeholder="Project URL"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700">Created By</label>
-                    <input
-                      type="text"
-                      name="createdBy"
-                      value={newProject.createdBy}
-                      readOnly={formMode === "view"}
-                      onChange={(e) =>
-                        setNewProject({
-                          ...newProject,
-                          createdBy: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-2 border rounded-lg ${
-                        formMode === "view" ? "bg-gray-100" : ""
-                      }`}
-                      placeholder="Created By"
-                      required={formMode !== "view"}
-                    />
-                  </div>
-                </div>
 
-                {/* Right column */}
-                <div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700">
-                      Project Category
-                    </label>
-                    <select
-                      name="projectCategory"
-                      value={newProject.projectCategory}
-                      disabled={formMode === "view"}
-                      onChange={(e) =>
-                        setNewProject({
-                          ...newProject,
-                          projectCategory: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-2 border rounded-lg ${
-                        formMode === "view" ? "bg-gray-100" : ""
-                      }`}
-                      required={formMode !== "view"}
+                  {/* Right column */}
+                  <div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700">
+                        Project Category
+                      </label>
+                      <select
+                        name="projectCategory"
+                        value={newProject.projectCategory}
+                        onChange={(e) =>
+                          setNewProject({
+                            ...newProject,
+                            projectCategory: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2 border rounded-lg"
+                        required
+                      >
+                        <option value="">Select a category</option>
+                        <option value="Category1">Category 1</option>
+                        <option value="Category2">Category 2</option>
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700">
+                        Project Description
+                      </label>
+                      <Editor
+                        apiKey="ukbx68ea6fmdx70aa0i1xe2qpekdqjmf3p540yemmh7lsorc"
+                        initialValue={newProject.description}
+                        init={{
+                          height: 300,
+                          menubar: false,
+                          plugins: [
+                            "advlist autolink lists link image charmap print preview anchor",
+                            "searchreplace visualblocks code fullscreen",
+                            "insertdatetime media table paste code help wordcount",
+                          ],
+                          toolbar:
+                            "undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help",
+                        }}
+                        onEditorChange={handleEditorChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="col-span-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={toggleModal}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800"
                     >
-                      <option value="">Select a category</option>
-                      <option value="Category1">Category 1</option>
-                      <option value="Category2">Category 2</option>
-                    </select>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700">
-                      Project Description
-                    </label>
-                    <Editor
-                      apiKey="ukbx68ea6fmdx70aa0i1xe2qpekdqjmf3p540yemmh7lsorc"
-                      initialValue={newProject.description}
-                      init={{
-                        height: 300,
-                        menubar: false,
-                        plugins: [
-                          "advlist autolink lists link image charmap print preview anchor",
-                          "searchreplace visualblocks code fullscreen",
-                          "insertdatetime media table paste code help wordcount",
-                        ],
-                        toolbar:
-                          "undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help",
-                      }}
-                      disabled={formMode === "view"}
-                      onEditorChange={handleEditorChange}
-                    />
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="col-span-2 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={toggleModal}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancel
-                  </button>
-                  {formMode !== "view" && (
+                      Cancel
+                    </button>
                     <button
                       type="submit"
                       className="ml-2 px-4 py-2 bg-green-500 text-white rounded-lg"
                     >
                       {formMode === "create" ? "Create" : "Update"}
                     </button>
-                  )}
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Form */}
+      {showViewModal && viewingProject && (
+        <div
+          className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
+          onClick={toggleViewModal}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-bold text-gray-900">
+                {viewingProject.name}
+              </h2>
+              <button
+                onClick={toggleViewModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p>
+                <strong className="text-gray-700">Category:</strong>{" "}
+                <span className="text-gray-600">
+                  {viewingProject.projectCategory}
+                </span>
+              </p>
+              <p>
+                <strong className="text-gray-700">Description:</strong>
+                <span
+                  className="text-gray-600"
+                  dangerouslySetInnerHTML={{
+                    __html: viewingProject.description,
+                  }}
+                />
+              </p>
+
+              <div className="mt-6">
+                <strong className="text-gray-700">Members:</strong>
+                <div className="flex space-x-4 mt-2">
+                  {viewingProject.user.map((user) => (
+                    <div
+                      key={user._id}
+                      className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg shadow-sm hover:bg-gray-200 transition-all"
+                    >
+                      <img
+                        src={user.avt}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full border-2 border-white"
+                      />
+                      <span className="text-gray-800 font-medium">
+                        {user.name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              </form>
+              </div>
             </div>
           </div>
         </div>
