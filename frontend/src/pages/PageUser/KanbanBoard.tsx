@@ -1,165 +1,162 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-  DroppableProvided,
-  DraggableProvided,
-} from "react-beautiful-dnd";
-import {
-  DocumentIcon,
-  CheckCircleIcon,
-  ArchiveBoxArrowDownIcon,
-} from "@heroicons/react/24/solid";
-
-type Task = {
-  id: string;
-  title: string;
-  category: string;
-};
-
-type TaskColumns = {
-  todo: Task[];
-  inProgress: Task[];
-  done: Task[];
-};
-
-const initialTasks: TaskColumns = {
-  todo: [
-    {
-      id: "DP-5",
-      title: "(Sample) Donation History Tracking",
-      category: "(SAMPLE) DONATION MANAGEMENT",
-    },
-  ],
-  inProgress: [
-    {
-      id: "DP-3",
-      title: "(Sample) Create Donation Page",
-      category: "(SAMPLE) DONATION MANAGEMENT",
-    },
-    {
-      id: "DP-4",
-      title: "(Sample) Email Verification Process",
-      category: "(SAMPLE) USER REGISTRATION",
-    },
-  ],
-  done: [
-    {
-      id: "DP-6",
-      title: "(Sample) Create User Registration Form",
-      category: "(SAMPLE) USER REGISTRATION",
-    },
-  ],
-};
-
-const TaskCard: React.FC<{ task: Task }> = ({ task }) => (
-  <div className="bg-white p-4 rounded-lg shadow-md mb-4 mt-9">
-    <h3 className="text-lg font-semibold mb-2">{task.title}</h3>
-    <span className="text-sm text-purple-600 font-bold bg-purple-100 rounded px-2 py-1">
-      {task.category}
-    </span>
-    <div className="mt-4 flex items-center space-x-2">
-      <span className="text-sm text-gray-500">{task.id}</span>
-      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-        <span className="text-gray-600">&#128100;</span>
-      </div>
-    </div>
-  </div>
-);
+  FaPlus,
+  FaEllipsisV,
+  FaFilter,
+  FaArrowDown,
+  FaArrowUp,
+} from "react-icons/fa";
 
 const KanbanBoard: React.FC = () => {
-  const [tasks, setTasks] = useState<TaskColumns>(initialTasks);
-
-  const onDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
-
-    // Nếu thả bên ngoài danh sách, trả về
-    if (!destination) return;
-
-    // Tạo bản sao của cột nguồn và cột đích
-    const sourceColumn = Array.from(
-      tasks[source.droppableId as keyof TaskColumns]
-    );
-    const destColumn = Array.from(
-      tasks[destination.droppableId as keyof TaskColumns]
-    );
-
-    // Xóa tác vụ khỏi cột nguồn
-    const [movedTask] = sourceColumn.splice(source.index, 1);
-
-    // Thêm tác vụ vào cột đích
-    destColumn.splice(destination.index, 0, movedTask);
-
-    // Cập nhật trạng thái
-    setTasks((prev) => ({
-      ...prev,
-      [source.droppableId]: sourceColumn,
-      [destination.droppableId]: destColumn,
-    }));
-  };
-
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4 p-8 mt-20">
-        {(["todo", "inProgress", "done"] as Array<keyof TaskColumns>).map(
-          (status) => (
-            <Droppable key={status} droppableId={status}>
-              {(provided: DroppableProvided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="w-1/3 bg-gray-100 p-4 rounded-lg"
-                >
-                  <div className="flex items-center mb-4">
-                    {status === "todo" && (
-                      <div className="flex items-center">
-                        <DocumentIcon className="h-6 w-6 text-blue-500 mr-2" />
-                        <h2 className="text-xl font-bold capitalize">To Do</h2>
-                      </div>
-                    )}
-                    {status === "inProgress" && (
-                      <div className="flex items-center">
-                        <CheckCircleIcon className="h-6 w-6 text-yellow-500 mr-2" />
-                        <h2 className="text-xl font-bold capitalize">
-                          In Progress
-                        </h2>
-                      </div>
-                    )}
-                    {status === "done" && (
-                      <div className="flex items-center">
-                        <ArchiveBoxArrowDownIcon className="h-6 w-6 text-green-500 mr-2" />
-                        <h2 className="text-xl font-bold capitalize">Done</h2>
-                      </div>
-                    )}
-                  </div>
-                  {tasks[status].map((task, taskIdx) => (
-                    <Draggable
-                      key={task.id}
-                      draggableId={task.id}
-                      index={taskIdx}
-                    >
-                      {(provided: DraggableProvided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          <TaskCard task={task} />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                  <button className="mt-2 text-blue-500">+ Create issue</button>
-                </div>
-              )}
-            </Droppable>
-          )
-        )}
+    <div
+      className="mt-20 p-6  min-h-screen"
+      style={{ backgroundColor: "#f7fafd" }}
+    >
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-lexend text-gray-800">
+          Board: <span className="text-green-600">Task</span>
+        </h1>
+        <button
+          className="flex items-center px-4 py-2 text-gray-800 font-lexend rounded-xl hover:bg-green-600"
+          style={{ backgroundColor: "#52e052" }}
+        >
+          <FaPlus className="mr-2" />
+          New Task
+        </button>
       </div>
-    </DragDropContext>
+
+      {/* Search and Filters */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400"
+          />
+          <button className="flex items-center px-3 py-2 border border-gray-300 rounded-xl text-gray-600 hover:text-gray-800">
+            <FaFilter className="mr-2" />
+            Quick Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Columns */}
+      <div className="grid grid-cols-4 gap-4">
+        {/* Column 1 */}
+        <div
+          className=" rounded-xl shadow-md p-4"
+          style={{ backgroundColor: "#ecf2f9" }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-lexend" style={{ color: "#6366f1" }}>
+              ● To Do (2)
+            </h2>
+            <button className="text-gray-500 hover:text-gray-800">
+              <FaEllipsisV />
+            </button>
+          </div>
+
+          {/* Task 1 */}
+          <div className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-lexend text-blue-600">FE</span>
+            </div>
+            <p className="text-gray-800 font-medium">fe</p>
+            <div className="flex justify-between items-center mt-4">
+              <div className="flex space-x-2">
+                <button className="text-purple-500 hover:text-purple-600">
+                  <FaArrowDown />
+                </button>
+                <button className="text-purple-500 hover:text-purple-600">
+                  <FaArrowUp />
+                </button>
+              </div>
+              <div className="flex space-x-1">
+                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
+                  H
+                </span>
+                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
+                  AA
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Task 2 */}
+          <div className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-lexend text-blue-600">FE</span>
+            </div>
+            <p className="text-gray-800 font-medium">fe</p>
+            <div className="flex justify-between items-center mt-4">
+              <div className="flex space-x-2">
+                <button className="text-purple-500 hover:text-purple-600">
+                  <FaArrowDown />
+                </button>
+                <button className="text-purple-500 hover:text-purple-600">
+                  <FaArrowUp />
+                </button>
+              </div>
+              <div className="flex space-x-1">
+                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
+                  H
+                </span>
+                <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">
+                  AA
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Column 2 */}
+        <div
+          className=" rounded-xl shadow-md p-4"
+          style={{ backgroundColor: "#ecf2f9" }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-lexend" style={{ color: "#f59e0b" }}>
+              ● In Progress (0)
+            </h2>
+            <button className="text-gray-500 hover:text-gray-800">
+              <FaEllipsisV />
+            </button>
+          </div>
+        </div>
+
+        {/* Column 3 */}
+        <div
+          className=" rounded-xl shadow-md p-4"
+          style={{ backgroundColor: "#ecf2f9" }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-lexend " style={{ color: "#f43f5e" }}>
+              ● In Review (0)
+            </h2>
+            <button className="text-gray-500 hover:text-gray-800">
+              <FaEllipsisV />
+            </button>
+          </div>
+        </div>
+
+        {/* Column 4 */}
+        <div
+          className=" rounded-xl shadow-md p-4"
+          style={{ backgroundColor: "#ecf2f9" }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-lexend " style={{ color: "#10b981" }}>
+              ● Done (0)
+            </h2>
+            <button className="text-gray-500 hover:text-gray-800">
+              <FaEllipsisV />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

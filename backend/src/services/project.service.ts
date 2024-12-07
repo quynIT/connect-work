@@ -25,8 +25,17 @@ export class ProjectService {
   }
 
   // Lấy tất cả các dự án
-  async getAllProjects(): Promise<Project[]> {
-    return await this.projectRepository.findAll();
+  async getAllProjectsWithUsers(): Promise<Project[]> {
+    const projects = await this.projectRepository.findByConditionAll(
+      {},
+      null, // Trả về tất cả các trường
+      null, // Không có tùy chọn nào cho query
+      {
+        path: 'user', // Populating thông tin người dùng
+        select: 'name avt', // Chỉ lấy các trường 'name' và 'avt' từ user
+      },
+    );
+    return projects;
   }
 
   // Lấy dự án theo ID
@@ -91,5 +100,23 @@ export class ProjectService {
     } else {
       throw new NotFoundException(`Project with id ${project_id} not found`);
     }
+  }
+  // Tìm dự án theo tên (gần đúng)
+  async findProjectsByName(name: string): Promise<Project[]> {
+    const projects = await this.projectRepository.findByConditionAll(
+      { name: { $regex: name, $options: 'i' } }, // Sử dụng RegEx để tìm tên gần đúng (không phân biệt chữ hoa/thường)
+      null, // Trả về tất cả các trường
+      null, // Không có tùy chọn nào cho query
+      {
+        path: 'user', // Populating thông tin người dùng
+        select: 'name avt', // Chỉ lấy các trường 'name' và 'avt' từ user
+      },
+    );
+
+    if (!projects || projects.length === 0) {
+      throw new NotFoundException(`No projects found with name like "${name}"`);
+    }
+
+    return projects;
   }
 }

@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { ProjectService } from '../services/project.service'; // Import ProjectService
 import { Project } from '../models/project.model'; // Import Project model
@@ -32,11 +33,11 @@ export class ProjectController {
   // Lấy danh sách tất cả các dự án
   @Get('/all')
   async getAllProjects(): Promise<Project[]> {
-    return this.projectService.getAllProjects();
+    return this.projectService.getAllProjectsWithUsers();
   }
 
   // Lấy chi tiết dự án theo ID
-  @Get(':id')
+  @Get('/detail/:id')
   async getProjectById(@Param('id') id: string): Promise<Project> {
     return this.projectService.getProjectById(id);
   }
@@ -63,8 +64,8 @@ export class ProjectController {
     return this.projectService.deleteProject(id);
   }
 
-  @Get('/list/:id/with-users')
-  async getProjectWithUsers(@Param('id') id: string) {
-    return await this.projectService.getProjectByUser(id);
+  @Get('/search')
+  async searchProjects(@Query('name') name: string) {
+    return this.projectService.findProjectsByName(name);
   }
 }

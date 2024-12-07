@@ -15,6 +15,7 @@ import MgAttendance from "../pages/PageAdmin/MgAttendance";
 import MgSalary from "../pages/PageAdmin/MgSalary";
 import MgTask from "../pages/PageAdmin/MgTask";
 import ChangePassword from "../pages/PageUser/ChangePassword";
+import ProjectList from "../pages/PageUser/ProjectList";
 export const routes = [
   {
     path: "/",
@@ -43,6 +44,10 @@ export const routes = [
   {
     path: "/change-password",
     page: ChangePassword,
+  },
+  {
+    path: "/project-list",
+    page: ProjectList,
   },
   {
     path: "*",

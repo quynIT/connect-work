@@ -60,7 +60,7 @@ export default function Header() {
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-gray-200" to="/task-board">
+                <Link className="hover:text-gray-200" to="/project-list">
                   Task Board
                 </Link>
               </li>
