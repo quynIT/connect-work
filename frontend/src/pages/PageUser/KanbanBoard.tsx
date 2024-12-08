@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FaPlus, FaEllipsisV, FaFilter } from "react-icons/fa";
+import { FaPlus, FaEllipsisV } from "react-icons/fa";
 import { Editor } from "@tinymce/tinymce-react";
 
 interface User {
@@ -27,25 +27,30 @@ interface TaskForm {
   status: string;
   projectId: string;
   type: string;
-  dueDate: number;
+  dueDate: string | null;
+  memberSearch: string;
 }
 
 const KanbanBoard: React.FC = () => {
   const { projectId } = useParams(); // Lấy idProject từ URL
   const [tasks, setTasks] = useState<Task[]>([]); // Lưu trữ danh sách task
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState(""); // Lưu giá trị tìm kiếm
   const [searchResults, setSearchResults] = useState<Task[] | null>(null); // Kết quả tìm kiếm
   const [loading, setLoading] = useState(true); // Hiển thị trạng thái loading
   const [isModalOpen, setIsModalOpen] = useState(false); // Trạng thái modal
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTask, setNewTask] = useState<TaskForm>({
     name: "",
     description: "",
     user: [], // Khởi tạo là mảng rỗng
+    memberSearch: "",
     status: "",
     projectId: projectId || "",
     type: "",
-    dueDate: 0,
+    dueDate: "",
   });
   // Gọi API để lấy task theo projectId
   useEffect(() => {
@@ -85,6 +90,7 @@ const KanbanBoard: React.FC = () => {
         }
         const data = await response.json();
         setUsers(data);
+        setFilteredUsers(data);
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu người dùng:", error);
       }
@@ -130,9 +136,19 @@ const KanbanBoard: React.FC = () => {
       description: content,
     }));
   };
+  const handleUserSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setNewTask({ ...newTask, memberSearch: value }); // Cập nhật memberSearch
+
+    const filtered = users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(value.toLowerCase()) &&
+        !selectedUsers.includes(user._id) // Loại bỏ người dùng đã chọn
+    );
+    setFilteredUsers(filtered);
+  };
   // Hàm mở và đóng modal
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
   // Hàm xử lý khi nhập dữ liệu trong form
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -151,12 +167,16 @@ const KanbanBoard: React.FC = () => {
     } else {
       setNewTask((prev) => ({
         ...prev,
-        [name]: value, // Xử lý các trường khác như bình thường
+        [name]: name === "dueDate" ? value || null : value, // Xử lý các trường khác như bình thường
       }));
     }
   };
   // Hàm xử lý tạo task mới
   const handleCreateTask = async () => {
+    if (newTask.user.length === 0) {
+      alert("Vui lòng chọn ít nhất một thành viên.");
+      return; // Dừng quá trình nếu không có thành viên nào được chọn
+    }
     try {
       // Lấy accessToken từ localStorage
       const accessToken = localStorage.getItem("accessToken");
@@ -187,11 +207,103 @@ const KanbanBoard: React.FC = () => {
       console.error("Lỗi khi tạo task mới:", error);
     }
   };
+  // Select user for the task
+  const handleUserSelect = (userId: string) => {
+    setNewTask((prev) => ({
+      ...prev,
+      user: [...prev.user, userId], // Thêm userId vào mảng user của newTask
+      memberSearch: "", // Xóa giá trị tìm kiếm
+    }));
+    setSelectedUsers((prev) => [...prev, userId]);
+    setFilteredUsers([]); // Xóa danh sách tìm kiếm sau khi chọn
+  };
+  // Hàm xóa người dùng khỏi danh sách đã chọn
+  const handleRemoveUser = (userId: string) => {
+    setNewTask((prev) => ({
+      ...prev,
+      user: prev.user.filter((id) => id !== userId), // Xóa userId khỏi mảng user
+    }));
+    setSelectedUsers((prev) => prev.filter((id) => id !== userId));
+  };
 
+  // Hàm update
+  const handleUpdateTask = async () => {
+    if (!editingTask) return;
+
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) {
+        console.error("Không có accessToken.");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:3000/tasks/update/${editingTask._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            ...newTask,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedTask = await response.json();
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task._id === updatedTask._id ? updatedTask : task
+          )
+        );
+        closeModal();
+      } else {
+        console.error("Lỗi khi cập nhật task:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật task:", error);
+    }
+  };
+  const openEditModal = (task: Task) => {
+    setEditingTask(task);
+    setNewTask({
+      name: task.name,
+      description: task.description,
+      user: task.user.map((u) => u._id),
+      status: task.status,
+      projectId: task.projectId,
+      dueDate: task.dueDate
+        ? new Date(task.dueDate).toISOString().split("T")[0]
+        : "",
+      memberSearch: "",
+      type: "",
+    });
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingTask(null);
+    setNewTask({
+      name: "",
+      description: "",
+      user: [],
+      memberSearch: "",
+      status: "",
+      projectId: projectId || "",
+      type: "",
+      dueDate: "",
+    });
+  };
   // Hàm render các task theo cột
   const renderTasks = (status: keyof typeof categorizedTasks) =>
     categorizedTasks[status].map((task) => (
-      <div key={task._id} className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
+      <div
+        key={task._id}
+        className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm"
+        onClick={() => openEditModal(task)}
+      >
         <p className="text-gray-800 font-medium">{task.name}</p>
         <div className="flex justify-between items-center mt-4">
           <div className="flex space-x-2">
@@ -233,7 +345,9 @@ const KanbanBoard: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-5xl w-full">
-            <h2 className="text-2xl font-bold mb-4">Create Task</h2>
+            <h2 className="text-2xl font-bold mb-4">
+              {editingTask ? "Update Task" : "Create Task"}
+            </h2>
             <form className="flex flex-wrap">
               {/* Left Column */}
               <div className="w-full sm:w-1/2 pr-4">
@@ -278,15 +392,58 @@ const KanbanBoard: React.FC = () => {
                 <input
                   type="text"
                   name="user"
-                  value={
-                    newTask.user && Array.isArray(newTask.user)
-                      ? newTask.user.join(", ") // Nối các ID người dùng thành chuỗi ngăn cách bằng dấu phẩy
-                      : ""
-                  }
-                  onChange={handleInputChange}
+                  value={newTask.memberSearch || ""}
+                  onChange={handleUserSearch} // Sai cú pháp
                   placeholder="Enter user IDs (comma separated)"
                   className="w-full p-2 border rounded-lg mb-4"
                 />
+                {newTask.memberSearch && (
+                  <ul className="mt-2 max-h-40 overflow-y-auto absolute z-10 bg-white shadow-md rounded-lg w-[430px]">
+                    {filteredUsers.map((user) => (
+                      <li
+                        key={user._id}
+                        onClick={() => handleUserSelect(user._id)}
+                        className="cursor-pointer px-2 py-1 hover:bg-gray-200 flex items-center"
+                      >
+                        <img
+                          src={user.avt}
+                          alt={user.name}
+                          className="w-8 h-8 rounded-full mr-2"
+                        />
+                        {user.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="mt-4">
+                  {selectedUsers.map((userId) => {
+                    const selectedUser = users.find(
+                      (user) => user._id === userId
+                    );
+                    return (
+                      selectedUser && (
+                        <div
+                          key={userId}
+                          className="flex items-center justify-between mt-2 px-4 py-2 bg-gray-100 rounded-lg"
+                        >
+                          <img
+                            src={selectedUser.avt}
+                            alt={selectedUser.name}
+                            className="w-8 h-8 rounded-full mr-2"
+                          />
+                          <span>{selectedUser.name}</span>
+                          <button
+                            onClick={() => handleRemoveUser(userId)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Right Column */}
@@ -306,6 +463,7 @@ const KanbanBoard: React.FC = () => {
                       "searchreplace visualblocks code fullscreen",
                       "insertdatetime media table paste code help wordcount",
                     ],
+                    directionality: "ltr", // Thêm hướng Left-to-Right
                     toolbar:
                       "undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help",
                   }}
@@ -324,10 +482,10 @@ const KanbanBoard: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={handleCreateTask}
+                  onClick={editingTask ? handleUpdateTask : handleCreateTask}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg"
                 >
-                  Create
+                  {editingTask ? "Update" : "Create"}
                 </button>
               </div>
             </form>

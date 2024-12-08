@@ -15,7 +15,9 @@ export class ProjectService {
     if (!project.user) {
       project.user = [];
     }
-    project.user.push(user._id.toString());
+    if (project.user.length === 0) {
+      project.user.push(user._id.toString());
+    }
 
     // Lưu dự án vào cơ sở dữ liệu
     const newProject = await this.projectRepository.create(

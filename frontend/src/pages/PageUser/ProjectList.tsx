@@ -240,7 +240,11 @@ const ProjectList: React.FC = () => {
   // Handle form submission (Create or Update)
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
+    // Kiểm tra xem người dùng đã chọn ít nhất một thành viên chưa
+    if (selectedUsers.length === 0) {
+      alert("Vui lòng chọn ít nhất một thành viên cho dự án.");
+      return;
+    }
     const payload: NewProjectPayload = {
       name: newProject.name,
       description: newProject.description,

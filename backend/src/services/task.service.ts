@@ -14,13 +14,17 @@ export class TaskService {
     if (!task.user) {
       task.user = [];
     }
-    task.user.push(user._id.toString());
 
-    // Lưu dự án vào cơ sở dữ liệu
-    const newProject = await this.taskRepository.create(
+    // Chỉ thêm user vào task.user nếu task.user là rỗng hoặc không có user
+    if (task.user.length === 0) {
+      task.user.push(user._id.toString());
+    }
+
+    // Lưu công việc vào cơ sở dữ liệu
+    const newTask = await this.taskRepository.create(
       task as unknown as Partial<Task>,
     );
-    return newProject;
+    return newTask;
   }
 
   // Lấy danh sách tất cả công việc
