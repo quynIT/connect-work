@@ -35,6 +35,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const userData = await getUserProfile();
         setUser(userData);
+        if (userData && userData._id) {
+          localStorage.setItem("currentUserId", userData._id);
+        }
       } catch {
         setUser(null);
       } finally {

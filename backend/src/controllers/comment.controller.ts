@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Delete,
+  Req,
+} from '@nestjs/common';
 import { CommentService } from '../services/comment.service';
 import { CreateCommentDto } from '../services/dto/comment.dto'; // Dữ liệu để tạo comment
 import { Comment } from '../models/comment.model'; // Mô hình Comment
@@ -9,10 +17,8 @@ export class CommentController {
 
   // Tạo comment mới
   @Post('/create')
-  async createComment(
-    @Body() createCommentDto: CreateCommentDto,
-  ): Promise<Comment> {
-    return this.commentService.createComment(createCommentDto); // Gọi service để tạo comment
+  async createComment(@Req() req: any, @Body() post: CreateCommentDto) {
+    return this.commentService.createComment(post);
   }
 
   // Lấy chi tiết comment theo ID

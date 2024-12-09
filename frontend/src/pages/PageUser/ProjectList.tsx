@@ -150,8 +150,10 @@ const ProjectList: React.FC = () => {
     const value = event.target.value;
     setNewProject({ ...newProject, memberSearch: value }); // Cập nhật memberSearch
 
-    const filtered = users.filter((user) =>
-      user.name.toLowerCase().includes(value.toLowerCase())
+    const filtered = users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(value.toLowerCase()) &&
+        !selectedUsers.includes(user._id) // Loại trừ các user đã có trong project
     );
     setFilteredUsers(filtered);
   };
@@ -197,6 +199,7 @@ const ProjectList: React.FC = () => {
         `http://localhost:3000/projects/detail/${projectId}`
       );
       const project = await response.json();
+      setSelectedUsers(project.user.map((u) => u._id));
       setNewProject({
         name: project.name,
         description: project.description,

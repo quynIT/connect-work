@@ -51,7 +51,6 @@ export const getUserProfile = async () => {
         Authorization: `Bearer ${accessToken}`,
       },
     });
-
     return response.data; // Trả về thông tin người dùng
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -111,4 +110,5 @@ export const logout = () => {
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("expiresAt");
   localStorage.removeItem("refreshTokenExpiresAt");
+  localStorage.removeItem("currentUserId");
 };

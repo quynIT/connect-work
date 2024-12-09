@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { FaPlus, FaEllipsisV } from "react-icons/fa";
 import { Editor } from "@tinymce/tinymce-react";
-
+import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import TaskDetail from "../../components/user/TaskDetail";
 interface User {
   _id: string;
   name: string;
@@ -42,6 +43,7 @@ const KanbanBoard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState<TaskForm>({
     name: "",
     description: "",
@@ -266,8 +268,37 @@ const KanbanBoard: React.FC = () => {
       console.error("Lỗi khi cập nhật task:", error);
     }
   };
+  // Hàm xóa task
+  const handleDeleteTask = async (taskId: string) => {
+    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa task này?");
+    if (confirmDelete) {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/tasks/delete/${taskId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          setTasks((prevTasks) =>
+            prevTasks.filter((task) => task._id !== taskId)
+          );
+          alert("Task đã được xóa.");
+        } else {
+          console.error("Lỗi khi xóa task:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Lỗi khi xóa task:", error);
+      }
+    }
+  };
   const openEditModal = (task: Task) => {
     setEditingTask(task);
+    setSelectedUsers(task.user.map((u) => u._id));
     setNewTask({
       name: task.name,
       description: task.description,
@@ -296,14 +327,18 @@ const KanbanBoard: React.FC = () => {
       dueDate: "",
     });
   };
+  // Xử lý mở chi tiết task
+  const handleOpenTaskDetail = (taskId: string) => {
+    setSelectedTaskId(taskId); // Lưu taskId vào state để hiển thị chi tiết
+  };
+  // Đóng chi tiết task
+  const handleCloseTaskDetail = () => {
+    setSelectedTaskId(null); // Đặt lại selectedTaskId thành null để đóng chi tiết
+  };
   // Hàm render các task theo cột
   const renderTasks = (status: keyof typeof categorizedTasks) =>
     categorizedTasks[status].map((task) => (
-      <div
-        key={task._id}
-        className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm"
-        onClick={() => openEditModal(task)}
-      >
+      <div key={task._id} className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
         <p className="text-gray-800 font-medium">{task.name}</p>
         <div className="flex justify-between items-center mt-4">
           <div className="flex space-x-2">
@@ -317,7 +352,35 @@ const KanbanBoard: React.FC = () => {
               />
             ))}
           </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handleOpenTaskDetail(task._id)} // Mở chi tiết task
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <FaEye className="text-blue-500" />
+            </button>
+            <button
+              onClick={() => openEditModal(task)}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <FaEdit className="text-yellow-500" />
+            </button>
+            <button
+              onClick={() => handleDeleteTask(task._id)} // Xóa task
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <FaTrash className="text-red-500" />
+            </button>
+          </div>
         </div>
+        {selectedTaskId && (
+          <div className="task-detail-modal">
+            <TaskDetail
+              taskId={selectedTaskId}
+              onClose={handleCloseTaskDetail}
+            />
+          </div>
+        )}
       </div>
     ));
 

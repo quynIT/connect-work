@@ -38,7 +38,7 @@ export class TaskController {
   // Lấy chi tiết công việc theo ID
   @Get(':id')
   async getTaskById(@Param('id') id: string): Promise<Task> {
-    return this.taskService.getTaskById(id);
+    return this.taskService.getTaskByUser(id);
   }
 
   // Cập nhật thông tin công việc theo ID

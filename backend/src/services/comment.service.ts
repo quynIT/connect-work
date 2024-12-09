@@ -10,14 +10,11 @@ export class CommentService {
   ) {}
 
   // Tạo comment mới
-  async createComment(createCommentDto: CreateCommentDto): Promise<Comment> {
-    try {
-      const comment = await this.commentRepository.create(createCommentDto); // Sử dụng phương thức create của repository
-      return comment; // Trả về một đối tượng comment duy nhất
-    } catch (error) {
-      console.error('Error creating comment:', error);
-      throw new Error('Failed to create comment');
-    }
+  async createComment(comment: CreateCommentDto) {
+    const newComment = await this.commentRepository.create(
+      comment as unknown as Partial<Comment>,
+    );
+    return newComment;
   }
 
   // Lấy một comment theo ID
@@ -49,14 +46,15 @@ export class CommentService {
   }
   // Lấy tất cả comment theo IDTask
   async getCommentsByTask(taskId: string): Promise<Comment[]> {
-    try {
-      const comments = await this.commentRepository.findByConditionAll({
-        taskId,
-      });
-      return comments; // Trả về danh sách các comment
-    } catch (error) {
-      console.error('Error fetching comments for task:', error);
-      throw new Error('Failed to fetch comments for task');
-    }
+    const comments = await this.commentRepository.findByConditionAll(
+      { taskId },
+      null, // Trả về tất cả các trường
+      null, // Không có tùy chọn nào cho query
+      {
+        path: 'user', // Populating thông tin người dùng
+        select: 'name avt', // Chỉ lấy các trường 'name' và 'avt' từ user
+      },
+    );
+    return comments;
   }
 }

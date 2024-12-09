@@ -6,7 +6,7 @@ export class CreateCommentDto {
   taskId: Types.ObjectId; // ID của Task
 
   @IsNotEmpty()
-  userId: Types.ObjectId; // ID của User
+  user: string[]; // ID của User
 
   @IsNotEmpty()
   content: string; // Nội dung comment

@@ -34,6 +34,12 @@ UserSchema.virtual('tasks', {
   foreignField: 'user',
   justOne: false,
 });
+UserSchema.virtual('comments', {
+  ref: 'Comment',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: false,
+});
 export { UserSchema };
 
 export interface User extends Document {
