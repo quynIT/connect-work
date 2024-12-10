@@ -77,7 +77,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ taskId, onClose }) => {
         setNewComment(""); // Xóa nội dung input sau khi tạo comment
       }
     } catch (error) {
-      console.error("Lỗi khi tạo comment:", error);
+      console.error("Error tạo comment:", error);
     }
   };
 
