@@ -152,7 +152,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ taskId, onClose }) => {
 
         {/* Hiển thị danh sách comment */}
         <div className="mt-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Comments</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Comments</h3>
           <div className="space-y-4">
             {comments.map((comment) => (
               <div
