@@ -53,18 +53,18 @@ export default function Calendar() {
   const [showForm, setShowForm] = useState(false);
 
   const rawData: AttendanceStatus[] = [
-    { absent: false, date: "2024-10-01", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2024-10-02", time: "", reason: "Bận việc riêng" },
-    { absent: false, date: "2024-10-03", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2024-10-30", time: "", reason: "Có việc gia đình" },
-    { absent: true, date: "2024-10-31", time: "", reason: "Có việc gia đình" },
-    { absent: false, date: "2024-11-01", time: "8:00 - 17:00", reason: "" },
-    { absent: false, date: "2024-11-02", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2024-11-03", time: "", reason: "Ốm" },
-    { absent: false, date: "2024-11-04", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2024-11-05", time: "", reason: "Đi công tác" },
-    { absent: true, date: "2024-09-01", time: "", reason: "Đi công tác" },
-    { absent: true, date: "2024-08-01", time: "", reason: "Đi công tác" },
+    { absent: false, date: "2024-12-30", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2025-01-01", time: "", reason: "Bận việc riêng" },
+    { absent: false, date: "2025-02-03", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2025-10-30", time: "", reason: "Có việc gia đình" },
+    { absent: true, date: "2025-10-31", time: "", reason: "Có việc gia đình" },
+    { absent: false, date: "2025-11-01", time: "8:00 - 17:00", reason: "" },
+    { absent: false, date: "2025-11-02", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2025-11-03", time: "", reason: "Ốm" },
+    { absent: false, date: "2025-11-04", time: "8:00 - 17:00", reason: "" },
+    { absent: true, date: "2025-11-05", time: "", reason: "Đi công tác" },
+    { absent: true, date: "2025-09-01", time: "", reason: "Đi công tác" },
+    { absent: true, date: "2025-08-01", time: "", reason: "Đi công tác" },
   ];
 
   const filterDataForMonth = (month: number, year: number) => {

@@ -575,18 +575,67 @@ const ProjectList: React.FC = () => {
                         Project Description
                       </label>
                       <Editor
-                        apiKey="ukbx68ea6fmdx70aa0i1xe2qpekdqjmf3p540yemmh7lsorc"
-                        initialValue={newProject.description}
+                        apiKey="xpd3ffmxsuyypgz6ksv812zf7wezg9klfrs5aettq52kn72m"
                         init={{
-                          height: 300,
-                          menubar: false,
                           plugins: [
-                            "advlist autolink lists link image charmap print preview anchor",
-                            "searchreplace visualblocks code fullscreen",
-                            "insertdatetime media table paste code help wordcount",
+                            // Core editing features
+                            "anchor",
+                            "autolink",
+                            "charmap",
+                            "codesample",
+                            "emoticons",
+                            "image",
+                            "link",
+                            "lists",
+                            "media",
+                            "searchreplace",
+                            "table",
+                            "visualblocks",
+                            "wordcount",
+                            // Your account includes a free trial of TinyMCE premium features
+                            // Try the most popular premium features until Jan 22, 2025:
+                            "checklist",
+                            "mediaembed",
+                            "casechange",
+                            "export",
+                            "formatpainter",
+                            "pageembed",
+                            "a11ychecker",
+                            "tinymcespellchecker",
+                            "permanentpen",
+                            "powerpaste",
+                            "advtable",
+                            "advcode",
+                            "editimage",
+                            "advtemplate",
+                            "ai",
+                            "mentions",
+                            "tinycomments",
+                            "tableofcontents",
+                            "footnotes",
+                            "mergetags",
+                            "autocorrect",
+                            "typography",
+                            "inlinecss",
+                            "markdown",
+                            "importword",
+                            "exportword",
+                            "exportpdf",
                           ],
                           toolbar:
-                            "undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help",
+                            "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat",
+                          tinycomments_mode: "embedded",
+                          tinycomments_author: "Author name",
+                          mergetags_list: [
+                            { value: "First.Name", title: "First Name" },
+                            { value: "Email", title: "Email" },
+                          ],
+                          ai_request: (request, respondWith) =>
+                            respondWith.string(() =>
+                              Promise.reject(
+                                "See docs to implement AI Assistant"
+                              )
+                            ),
                         }}
                         onEditorChange={handleEditorChange}
                       />
