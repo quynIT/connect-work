@@ -55,7 +55,7 @@ export default function Calendar() {
   const rawData: AttendanceStatus[] = [
     { absent: false, date: "2024-12-30", time: "8:00 - 17:00", reason: "" },
     { absent: true, date: "2025-01-01", time: "", reason: "Bận việc riêng" },
-    { absent: false, date: "2025-02-03", time: "8:00 - 17:00", reason: "" },
+    { absent: false, date: "2025-01-03", time: "8:00 - 17:00", reason: "" },
     { absent: true, date: "2025-10-30", time: "", reason: "Có việc gia đình" },
     { absent: true, date: "2025-10-31", time: "", reason: "Có việc gia đình" },
     { absent: false, date: "2025-11-01", time: "8:00 - 17:00", reason: "" },

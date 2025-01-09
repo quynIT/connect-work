@@ -9,6 +9,10 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ProjectModule } from './module/project.module';
 import { TaskModule } from './module/task.module';
 import { CommentModule } from './module/comment.module';
+import { AttendanceFormModule } from './module/attendanceform.module';
+import { AttendanceRecordModule } from './module/attendancerecord.module';
+import { LeaveRequestModule } from './module/leaverequest.module';
+import { PayrollModule } from './module/payroll.module';
 
 dotenv.config();
 @Module({
@@ -17,6 +21,10 @@ dotenv.config();
     ProjectModule,
     TaskModule,
     CommentModule,
+    AttendanceFormModule,
+    AttendanceRecordModule,
+    LeaveRequestModule,
+    PayrollModule,
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGODB_URL),
     MailerModule.forRootAsync({

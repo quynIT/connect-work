@@ -40,6 +40,34 @@ UserSchema.virtual('comments', {
   foreignField: 'user',
   justOne: false,
 });
+UserSchema.virtual('attendance_forms', {
+  ref: 'AttendanceForm',
+  localField: '_id',
+  foreignField: 'created_by',
+  justOne: false,
+});
+
+UserSchema.virtual('attendance_records', {
+  ref: 'AttendanceRecord',
+  localField: '_id',
+  foreignField: 'user_id',
+  justOne: false,
+});
+
+UserSchema.virtual('leave_requests', {
+  ref: 'LeaveRequest',
+  localField: '_id',
+  foreignField: 'user_id',
+  justOne: false,
+});
+
+UserSchema.virtual('payrolls', {
+  ref: 'Payroll',
+  localField: '_id',
+  foreignField: 'user_id',
+  justOne: false,
+});
+
 export { UserSchema };
 
 export interface User extends Document {
