@@ -7,7 +7,7 @@ const ProjectSchema = new Schema(
     url: { type: String, default: null },
     description: { type: String, default: null },
     projectCategory: { type: String, required: true },
-    user: [{ type: Schema.Types.ObjectId, ref: 'User' }], // References to User
+    user: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     createdBy: { type: String, required: true },
   },
   {
@@ -16,7 +16,7 @@ const ProjectSchema = new Schema(
   },
 );
 
-export const ProjectModel = mongoose.model('Project', ProjectSchema); // Register Project model
+export const ProjectModel = mongoose.model('Project', ProjectSchema);
 export { ProjectSchema };
 export interface Project extends Document {
   name: string;
