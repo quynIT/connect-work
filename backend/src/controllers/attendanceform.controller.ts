@@ -24,7 +24,7 @@ export class AttendanceFormController {
 
   // Tạo form điểm danh mới
   @Post('/create')
-  @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   async createAttendanceForm(
     @Req() req: any,
     @Body() createForm: CreateAttendanceFormDto,

@@ -22,7 +22,7 @@ export class UserController {
     return req.user;
   }
   // Get user by id
-  @UseGuards(AuthGuard()) // Admin
+  // @UseGuards(AuthGuard()) // Admin
   @Get('list')
   async getAllUsers() {
     return await this.userService.getAllUsers();
