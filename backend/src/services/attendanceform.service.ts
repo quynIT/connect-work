@@ -32,7 +32,10 @@ export class AttendanceFormService {
 
   // Lấy form điểm danh theo ID
   async getAttendanceFormById(id: string): Promise<AttendanceForm | null> {
-    return await this.attendanceFormRepository.findById(id);
+    return await this.attendanceFormRepository.findByIdWithPopulate(id, {
+      path: 'employees.user_id',
+      select: 'name',
+    });
   }
 
   // Cập nhật form điểm danh
@@ -68,5 +71,22 @@ export class AttendanceFormService {
       throw new NotFoundException(`Attendance form with ID ${id} not found`);
     }
     return form;
+  }
+  // Tìm kiếm form điểm danh theo ngày
+  async searchFormsByDate(date: string): Promise<AttendanceForm[]> {
+    // Xử lý tham số ngày
+    const searchDate = new Date(date);
+    if (isNaN(searchDate.getTime())) {
+      throw new Error('Ngày tìm kiếm không hợp lệ');
+    }
+
+    // Tìm kiếm form điểm danh trong khoảng thời gian của ngày
+    const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
+
+    // Sử dụng repository để tìm form
+    return await this.attendanceFormRepository.getByCondition({
+      date: { $gte: startOfDay, $lt: endOfDay },
+    });
   }
 }

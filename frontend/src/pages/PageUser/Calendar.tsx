@@ -2,6 +2,16 @@ import { XMarkIcon, CheckIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
 import { Tooltip } from "react-tooltip";
 
+type AttendanceRecord = {
+  _id: string;
+  user_id: string;
+  date: string;
+  is_present: boolean;
+  reason: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type AttendanceStatus = {
   absent: boolean;
   date: string;
@@ -26,8 +36,8 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({ title, days }) => {
             data-tooltip-id={`tooltip-${index}`}
             data-tooltip-content={
               day.absent
-                ? `${day.date} - Nghỉ: ${day.reason}`
-                : `${day.date} - ${day.time}`
+                ? `${day.date} - Nghỉ: ${day.reason || "Không có lý do"}`
+                : `${day.date} - ${day.time || "8:00 - 17:00"}`
             }
           >
             {day.absent ? (
@@ -51,38 +61,104 @@ export default function Calendar() {
     { month: number; year: number; days: AttendanceStatus[] }[]
   >([]);
   const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    date: "",
+    reason: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fetchAttendanceData = async () => {
+    try {
+      const userId = localStorage.getItem("currentUserId");
+      const year = new Date().getFullYear();
+      const response = await fetch(
+        `http://localhost:3000/attendance-records/user-attendance-details-in-year?user_id=${userId}&year=${year}`
+      );
+      const data: AttendanceRecord[] = await response.json();
 
-  const rawData: AttendanceStatus[] = [
-    { absent: false, date: "2024-12-30", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2025-01-01", time: "", reason: "Bận việc riêng" },
-    { absent: false, date: "2025-01-03", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2025-10-30", time: "", reason: "Có việc gia đình" },
-    { absent: true, date: "2025-10-31", time: "", reason: "Có việc gia đình" },
-    { absent: false, date: "2025-11-01", time: "8:00 - 17:00", reason: "" },
-    { absent: false, date: "2025-11-02", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2025-11-03", time: "", reason: "Ốm" },
-    { absent: false, date: "2025-11-04", time: "8:00 - 17:00", reason: "" },
-    { absent: true, date: "2025-11-05", time: "", reason: "Đi công tác" },
-    { absent: true, date: "2025-09-01", time: "", reason: "Đi công tác" },
-    { absent: true, date: "2025-08-01", time: "", reason: "Đi công tác" },
-  ];
+      // Transform API data to match AttendanceStatus type
+      const transformedData: AttendanceStatus[] = data.map((record) => ({
+        absent: !record.is_present,
+        date: new Date(record.date).toISOString().split("T")[0],
+        time: record.is_present ? "8:00 - 17:00" : undefined,
+        reason: record.reason || undefined,
+      }));
 
-  const filterDataForMonth = (month: number, year: number) => {
-    return rawData.filter((day) => {
+      return transformedData;
+    } catch (error) {
+      console.error("Error fetching attendance data:", error);
+      return [];
+    }
+  };
+
+  const filterDataForMonth = (
+    data: AttendanceStatus[],
+    month: number,
+    year: number
+  ) => {
+    return data.filter((day) => {
       const date = new Date(day.date);
       return date.getMonth() === month && date.getFullYear() === year;
     });
   };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  useEffect(() => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
+    try {
+      const userId = localStorage.getItem("currentUserId");
+      const response = await fetch("http://localhost:3000/leave-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          date: formData.date,
+          reason: formData.reason,
+        }),
+      });
 
-    const updateDataForMultipleMonths = () => {
+      if (!response.ok) {
+        throw new Error("Failed to submit leave request");
+      }
+
+      // Reset form and close modal
+      setFormData({ date: "", reason: "" });
+      setShowForm(false);
+
+      // Refresh attendance data
+      const attendanceData = await fetchAttendanceData();
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+
       const monthsToShow = [];
       for (let i = 0; i <= currentMonth; i++) {
-        const monthData = filterDataForMonth(i, currentYear);
+        const monthData = filterDataForMonth(attendanceData, i, currentYear);
+        if (monthData.length > 0) {
+          monthsToShow.push({ month: i, year: currentYear, days: monthData });
+        }
+      }
+      setMultiMonthData(monthsToShow);
+
+      alert("Đã gửi đơn xin nghỉ phép thành công!");
+    } catch (error) {
+      console.error("Error submitting leave request:", error);
+      alert("Có lỗi xảy ra khi gửi đơn xin nghỉ phép!");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  useEffect(() => {
+    const loadAttendanceData = async () => {
+      const attendanceData = await fetchAttendanceData();
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+
+      const monthsToShow = [];
+      for (let i = 0; i <= currentMonth; i++) {
+        const monthData = filterDataForMonth(attendanceData, i, currentYear);
         if (monthData.length > 0) {
           monthsToShow.push({ month: i, year: currentYear, days: monthData });
         }
@@ -90,18 +166,9 @@ export default function Calendar() {
       setMultiMonthData(monthsToShow);
     };
 
-    updateDataForMultipleMonths();
+    loadAttendanceData();
 
-    const intervalId = setInterval(() => {
-      const newDate = new Date();
-      if (
-        newDate.getMonth() !== currentMonth ||
-        newDate.getFullYear() !== currentYear
-      ) {
-        updateDataForMultipleMonths();
-      }
-    }, 60000);
-
+    const intervalId = setInterval(loadAttendanceData, 60000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -141,30 +208,36 @@ export default function Calendar() {
               <XMarkIcon className="w-6 h-6" />
             </button>
             <h2 className="text-2xl font-semibold mb-4">Xin nghỉ phép</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Tên</label>
-                <input
-                  type="text"
-                  className="w-full border rounded px-3 py-2 focus:outline-none"
-                />
-              </div>
+            <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label className="block text-gray-700 mb-2">Ngày</label>
                 <input
                   type="date"
                   className="w-full border rounded px-3 py-2 focus:outline-none"
+                  value={formData.date}
+                  onChange={(e) =>
+                    setFormData({ ...formData, date: e.target.value })
+                  }
+                  required
                 />
               </div>
               <div className="mb-4">
                 <label className="block text-gray-700 mb-2">Lý do</label>
-                <textarea className="w-full border rounded px-3 py-2 focus:outline-none" />
+                <textarea
+                  className="w-full border rounded px-3 py-2 focus:outline-none"
+                  value={formData.reason}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reason: e.target.value })
+                  }
+                  required
+                />
               </div>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+                disabled={isSubmitting}
               >
-                Gửi
+                {isSubmitting ? "Đang gửi..." : "Gửi"}
               </button>
             </form>
           </div>

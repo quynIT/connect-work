@@ -12,4 +12,7 @@ export class AttendanceFormRepository extends BaseRepository<AttendanceForm> {
   ) {
     super(attendanceFormModel);
   }
+  async findByIdWithPopulate(id: string, populateOptions: any) {
+    return this.attendanceFormModel.findById(id).populate(populateOptions);
+  }
 }

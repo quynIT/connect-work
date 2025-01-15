@@ -16,6 +16,8 @@ import MgSalary from "../pages/PageAdmin/MgSalary";
 import MgTask from "../pages/PageAdmin/MgTask";
 import ChangePassword from "../pages/PageUser/ChangePassword";
 import ProjectList from "../pages/PageUser/ProjectList";
+import ViewAttendance from "../components/admin/ViewAttendance";
+import EditAttendance from "../components/admin/EditAttendance";
 export const routes = [
   {
     path: "/",
@@ -90,5 +92,13 @@ export const adminRoutes = [
   {
     path: "/admin/ql-task",
     page: MgTask,
+  },
+  {
+    path: "/admin/view-attendance/:id",
+    page: ViewAttendance,
+  },
+  {
+    path: "/admin/edit-attendance/:id",
+    page: EditAttendance,
   },
 ];

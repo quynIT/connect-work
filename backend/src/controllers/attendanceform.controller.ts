@@ -7,8 +7,9 @@ import {
   Put,
   Delete,
   Req,
-  UseGuards,
   NotFoundException,
+  Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { AttendanceFormService } from '../services/attendanceform.service';
 import { AttendanceForm } from '../models/attendanceform.model';
@@ -16,7 +17,6 @@ import {
   CreateAttendanceFormDto,
   UpdateAttendanceFormDto,
 } from 'src/services/dto/attendanceform.dto';
-import { AuthGuard } from '@nestjs/passport';
 
 @Controller('attendance-forms')
 export class AttendanceFormController {
@@ -40,7 +40,14 @@ export class AttendanceFormController {
   async getAllAttendanceForms(): Promise<AttendanceForm[]> {
     return this.attendanceFormService.getAllAttendanceForms();
   }
+  @Get('search-by-date')
+  async searchByDate(@Query('date') date: string) {
+    if (!date) {
+      throw new BadRequestException('Vui lòng cung cấp ngày để tìm kiếm');
+    }
 
+    return await this.attendanceFormService.searchFormsByDate(date);
+  }
   // Lấy form điểm danh theo ID
   @Get('/detail/:id')
   async getAttendanceFormById(
