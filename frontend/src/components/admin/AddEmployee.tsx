@@ -34,10 +34,18 @@ function AddEmployee() {
     const file = event.target.files?.[0];
     if (file) {
       const storage = getStorage();
-      const fileRef = ref(storage, `avatars/${file.name}`);
+
+      // Tạo một đường dẫn cho ảnh thumbnail
+      const fileName = file.name.split(".")[0] + "-thumbnail.jpg"; // Thêm "-thumbnail" vào tên file
+      const fileRef = ref(storage, `avatars/${fileName}`);
+
+      // Upload ảnh thumbnail lên Firebase
       await uploadBytes(fileRef, file);
+
+      // Lấy URL của ảnh thumbnail sau khi upload thành công
       const fileURL = await getDownloadURL(fileRef);
-      setImage(fileURL); // Lưu URL ảnh vào state
+
+      setImage(fileURL); // Lưu URL ảnh thumbnail vào state
     }
   };
 

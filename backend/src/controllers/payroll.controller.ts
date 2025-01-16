@@ -1,5 +1,6 @@
-import { Controller, Post, Get, Query } from '@nestjs/common';
+import { Controller, Post, Get, Query, Put, Param, Body } from '@nestjs/common';
 import { PayrollService } from '../services/payroll.service';
+import { PayrollDto } from 'src/services/dto/payroll.dto';
 
 @Controller('payrolls')
 export class PayrollController {
@@ -26,5 +27,25 @@ export class PayrollController {
       month,
     );
     return payroll ? payroll : { message: 'Payroll not found' };
+  }
+
+  // Cập nhật trạng thái thanh toán của bảng lương
+  @Put('/update/:user_id/:month')
+  async updatePaymentStatus(
+    @Param('user_id') user_id: string,
+    @Param('month') month: string,
+    @Body() updatePaymentStatusDto: PayrollDto,
+  ) {
+    const updatedPayroll = await this.payrollService.updatePaymentStatus(
+      user_id,
+      month,
+      updatePaymentStatusDto.isPaid,
+      updatePaymentStatusDto.note,
+    );
+    return { message: 'Payroll updated successfully', updatedPayroll };
+  }
+  @Get('summary')
+  async getPayrollSummaries() {
+    return this.payrollService.getPayrollSummaries();
   }
 }

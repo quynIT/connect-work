@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { FiEdit, FiTrash2, FiEye, FiSearch, FiSave } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiEye, FiSave } from "react-icons/fi";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+} from "@heroicons/react/24/solid";
 interface User {
   _id: string;
   name: string;
@@ -269,7 +274,16 @@ export default function MgAttendance() {
       alert("Có lỗi xảy ra khi cập nhật trạng thái.");
     }
   };
-
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "approved":
+        return <CheckCircleIcon className="w-6 h-6 text-green-500" />;
+      case "rejected":
+        return <XCircleIcon className="w-6 h-6 text-red-500" />;
+      default:
+        return <ClockIcon className="w-6 h-6 text-yellow-500" />;
+    }
+  };
   return (
     <div className="relative flex flex-col justify-center items-center">
       {/* Thanh tìm kiếm */}
@@ -378,41 +392,50 @@ export default function MgAttendance() {
       </div>
       {showForm && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center"
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center backdrop-blur-sm"
           onClick={closeModal}
         >
           <div
-            className="bg-white rounded-lg p-8 w-[80%] max-h-[90vh] overflow-hidden relative"
+            className="bg-white rounded-xl p-6 w-[85%] max-h-[90vh] overflow-hidden relative shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeModal}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
+
             <div className="p-4">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600">Ngày điểm danh:</span>
-                  <input
-                    type="date"
-                    value={formDate}
-                    onChange={handleFormDateChange}
-                    className="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
-                  />
+              {/* Header Section */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-700 font-medium">
+                      Ngày điểm danh:
+                    </span>
+                    <input
+                      type="date"
+                      value={formDate}
+                      onChange={handleFormDateChange}
+                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 bg-gray-50 hover:bg-white transition-colors duration-200"
+                    />
+                  </div>
+
                   {leaveCount > 0 && (
                     <div
-                      className="text-sm text-blue-500 cursor-pointer"
+                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 cursor-pointer transition-colors duration-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg"
                       onClick={() => setShowLeaveRequests(true)}
                     >
-                      {leaveCount} người xin phép
+                      <span className="font-medium">{leaveCount}</span>
+                      <span>người xin phép</span>
                     </div>
                   )}
                 </div>
+
                 <button
                   onClick={handleSaveForm}
-                  className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md font-medium"
                 >
                   <FiSave className="w-5 h-5" />
                   Lưu điểm danh
@@ -420,31 +443,34 @@ export default function MgAttendance() {
               </div>
 
               {/* Attendance Table */}
-              <div className="overflow-y-auto max-h-[50vh] border rounded-md">
-                <table className="w-full border-collapse">
+              <div className="overflow-y-auto max-h-[60vh] rounded-xl border border-gray-200 shadow-sm">
+                <table className="w-full border-collapse bg-white">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-4 py-2 border text-left text-gray-600">
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-6 py-3 border-r text-left text-gray-700 font-semibold tracking-wider">
                         Nhân viên
                       </th>
-                      <th className="px-4 py-2 border text-center text-gray-600">
+                      <th className="px-6 py-3 border-r text-center text-gray-700 font-semibold tracking-wider w-32">
                         Điểm danh
                       </th>
-                      <th className="px-4 py-2 border text-center text-gray-600">
+                      <th className="px-6 py-3 text-left text-gray-700 font-semibold tracking-wider">
                         Ghi chú
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     {users.map((user) => (
-                      <tr key={user._id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 border text-gray-600">
+                      <tr
+                        key={user._id}
+                        className="hover:bg-gray-50 transition-colors duration-150"
+                      >
+                        <td className="px-6 py-4 border-r text-gray-700 font-medium">
                           {user.name}
                         </td>
-                        <td className="px-4 py-2 border text-center">
+                        <td className="px-6 py-4 border-r text-center">
                           <input
                             type="checkbox"
-                            className="w-5 h-5 rounded border-gray-300 text-blue-500 focus:ring-blue-500 transition-colors cursor-pointer"
+                            className="w-5 h-5 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 transition-colors cursor-pointer"
                             onChange={(e) =>
                               updateAttendance(
                                 user._id,
@@ -454,9 +480,9 @@ export default function MgAttendance() {
                             }
                           />
                         </td>
-                        <td className="px-4 py-2 border">
+                        <td className="px-6 py-4">
                           <textarea
-                            className="w-full min-h-[40px] p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-gray-600"
+                            className="w-full min-h-[40px] p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-600 placeholder-gray-400 bg-gray-50 hover:bg-white transition-colors duration-200"
                             placeholder="Nhập ghi chú..."
                             onChange={(e) =>
                               updateAttendance(
@@ -485,39 +511,53 @@ export default function MgAttendance() {
             className="bg-white rounded-lg p-8 w-[80%] max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-gray-700 mb-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-6">
               Danh sách xin phép vắng ngày {formDate}
             </h3>
-            <ul className="list-disc pl-6 text-gray-600">
-              {leaveRequests.map((req: any) => (
-                <li key={req._id} className="mb-4">
+            <ul className="space-y-4">
+              {leaveRequests.map((req) => (
+                <li
+                  key={req._id}
+                  className="p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                >
                   <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-medium">{req.user_id.name}</span> (
-                      {req.user_id.position}) - {req.reason}
-                      <span className="ml-2 text-sm text-gray-500">
-                        [Trạng thái: {req.status}]
-                      </span>
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(req.status)}
+                      <div>
+                        <span className="font-medium text-gray-800">
+                          {req.user_id.name}
+                        </span>
+                        <span className="text-gray-600">
+                          {" "}
+                          ({req.user_id.position})
+                        </span>
+                        <p className="text-gray-600 mt-1">{req.reason}</p>
+                      </div>
                     </div>
+
                     <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          updateLeaveRequestStatus(req._id, "approved")
-                        }
-                        className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
-                        disabled={req.status === "approved"}
-                      >
-                        Approved
-                      </button>
-                      <button
-                        onClick={() =>
-                          updateLeaveRequestStatus(req._id, "rejected")
-                        }
-                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
-                        disabled={req.status === "rejected"}
-                      >
-                        Rejected
-                      </button>
+                      {req.status === "pending" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              updateLeaveRequestStatus(req._id, "approved")
+                            }
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center gap-2"
+                          >
+                            <CheckCircleIcon className="w-5 h-5" />
+                            Approved
+                          </button>
+                          <button
+                            onClick={() =>
+                              updateLeaveRequestStatus(req._id, "rejected")
+                            }
+                            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center gap-2"
+                          >
+                            <XCircleIcon className="w-5 h-5" />
+                            Rejected
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </li>
@@ -525,7 +565,7 @@ export default function MgAttendance() {
             </ul>
             <button
               onClick={() => setShowLeaveRequests(false)}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              className="mt-6 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200 w-full sm:w-auto"
             >
               Đóng
             </button>

@@ -45,7 +45,24 @@ export class LeaveRequestService {
       { path: 'user_id', select: 'name position' }, // populate 'user_id' và lấy các trường 'name' và 'position'
     );
   }
+  async getLeaveRequestsByUser(userId: string): Promise<LeaveRequest[]> {
+    const userObjectId = new Types.ObjectId(userId);
 
+    const leaveRequests = await this.leaveRequestRepository.getByCondition(
+      { user_id: userObjectId },
+      null,
+      null,
+      { path: 'user_id', select: 'name position' },
+    );
+
+    if (!leaveRequests || leaveRequests.length === 0) {
+      throw new NotFoundException(
+        `No leave requests found for user ID ${userId}`,
+      );
+    }
+
+    return leaveRequests;
+  }
   async updateLeaveRequestStatus(
     requestId: string,
     updateStatusDto: UpdateLeaveRequestStatusDto,

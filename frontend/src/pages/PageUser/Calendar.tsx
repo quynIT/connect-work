@@ -1,5 +1,7 @@
+import { CalculatorIcon } from "@heroicons/react/24/outline";
 import { XMarkIcon, CheckIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tooltip } from "react-tooltip";
 
 type AttendanceRecord = {
@@ -22,11 +24,51 @@ type AttendanceStatus = {
 interface AttendanceTableProps {
   title: string;
   days: AttendanceStatus[];
+  month: string;
 }
 
-const AttendanceTable: React.FC<AttendanceTableProps> = ({ title, days }) => {
+const AttendanceTable: React.FC<AttendanceTableProps> = ({
+  title,
+  days,
+  month,
+}) => {
+  const [salary, setSalary] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const userId = localStorage.getItem("currentUserId");
+  const [error, setError] = useState<string | null>(null);
+  const fetchSalary = async () => {
+    try {
+      // Gọi API để lấy lương
+      const response = await fetch(
+        `http://localhost:3000/payrolls/by-month?user_id=${userId}&month=${month}`
+      );
+      const data = await response.json();
+      setSalary(data.total_salary);
+    } catch (error) {
+      console.error("Error fetching salary:", error);
+    }
+  };
+
+  const generateSalary = async () => {
+    setIsLoading(true);
+    try {
+      // Gọi API để tính lương
+      await fetch(
+        `http://localhost:3000/payrolls/generate?user_id=${userId}&month=${month}`,
+        {
+          method: "POST",
+        }
+      );
+      // Sau khi tính lương xong, fetch lại số lương mới
+      await fetchSalary();
+    } catch (error) {
+      console.error("Error generating salary:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
-    <div className="border rounded-lg shadow-md p-4 w-[400px] h-[450px] bg-white">
+    <div className="border rounded-lg shadow-md p-4 w-[400px] h-auto bg-white">
       <h2 className="text-xl font-semibold text-center mb-4">{title}</h2>
       <div className="grid grid-rows-6 grid-cols-6 gap-2">
         {days.map((day, index) => (
@@ -48,7 +90,25 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({ title, days }) => {
           </div>
         ))}
       </div>
-      <h2 className="text-xl font-semibold text-center">Tổng lương: 5000$</h2>
+      <div className="mt-4 space-y-4">
+        <button
+          onClick={generateSalary}
+          disabled={isLoading}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 flex items-center justify-center gap-2"
+        >
+          <CalculatorIcon className="w-5 h-5" />
+          {isLoading ? "Đang tính..." : "Tính lương"}
+        </button>
+
+        {error && <p className="text-red-500 text-center">{error}</p>}
+
+        {salary !== null && (
+          <div className="text-xl font-semibold text-center">
+            Tổng lương: {salary.toLocaleString()}đ
+          </div>
+        )}
+      </div>
+
       {days.map((_, index) => (
         <Tooltip key={index} id={`tooltip-${index}`} />
       ))}
@@ -173,47 +233,73 @@ export default function Calendar() {
   }, []);
 
   const closeModal = () => setShowForm(false);
-
+  const navigate = useNavigate();
   return (
-    <div className="relative">
-      <div className="grid gap-4 p-8 ml-8 mt-[150px] grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {multiMonthData.map((data, index) => (
-          <AttendanceTable
-            key={index}
-            title={`Tháng ${data.month + 1} / ${data.year}`}
-            days={data.days}
-          />
-        ))}
+    <div className="relative min-h-screen bg-gray-50">
+      {/* Header Actions */}
+      <div className="fixed right-8 top-[130px] flex gap-4 z-10">
+        <button
+          onClick={() => navigate("/leave-request")}
+          className="flex items-center justify-center px-6 py-3 bg-indigo-600 text-white text-lg font-medium rounded-lg shadow-lg hover:bg-indigo-700 transition-colors duration-200"
+        >
+          Lịch sử nghỉ phép
+        </button>
         <button
           onClick={() => setShowForm(true)}
-          className="fixed text-3xl right-3 top-[130px] transform -translate-y-1/2 w-52 h-20 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-700"
+          className="flex items-center justify-center px-6 py-3 bg-blue-600 text-white text-lg font-medium rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-200"
         >
           Xin nghỉ phép
         </button>
       </div>
 
+      {/* Calendar Grid */}
+      <div className="container mx-auto px-4">
+        <div className="grid gap-6 p-8 mt-[150px] grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {multiMonthData.map((data, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200"
+            >
+              <AttendanceTable
+                title={`Tháng ${data.month + 1} / ${data.year}`}
+                days={data.days}
+                month={`${data.year}-${String(data.month + 1).padStart(
+                  2,
+                  "0"
+                )}`} // Format: YYYY-MM
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Modal Form */}
       {showForm && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center"
+          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
           onClick={closeModal}
         >
           <div
-            className="bg-white rounded-lg p-8 w-[400px] relative"
+            className="bg-white rounded-xl p-8 w-[450px] relative shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeModal}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
             >
               <XMarkIcon className="w-6 h-6" />
             </button>
-            <h2 className="text-2xl font-semibold mb-4">Xin nghỉ phép</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Ngày</label>
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+              Xin nghỉ phép
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Ngày nghỉ
+                </label>
                 <input
                   type="date"
-                  className="w-full border rounded px-3 py-2 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   value={formData.date}
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
@@ -221,23 +307,26 @@ export default function Calendar() {
                   required
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Lý do</label>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Lý do nghỉ
+                </label>
                 <textarea
-                  className="w-full border rounded px-3 py-2 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   value={formData.reason}
                   onChange={(e) =>
                     setFormData({ ...formData, reason: e.target.value })
                   }
                   required
+                  placeholder="Vui lòng nhập lý do nghỉ..."
                 />
               </div>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors duration-200"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Đang gửi..." : "Gửi"}
+                {isSubmitting ? "Đang gửi..." : "Gửi yêu cầu"}
               </button>
             </form>
           </div>

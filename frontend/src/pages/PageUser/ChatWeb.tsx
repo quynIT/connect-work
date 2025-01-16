@@ -530,7 +530,17 @@ export default function ChatWeb() {
       alert("Có lỗi xảy ra khi xóa thành viên!");
     }
   };
-
+  const formattedMessages = messages.map((message) => {
+    const messageDate = new Date(message.createdAt);
+    return {
+      ...message,
+      timeString: messageDate.toLocaleString("en-US", {
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  });
   return (
     <div className="flex mt-[100px] h-[85vh] mb-5">
       {/* Left Sidebar - Chat List */}
@@ -572,23 +582,6 @@ export default function ChatWeb() {
             </li>
           ))}
         </ul>
-        {/* <ul>
-          {users.map((user, index) => (
-            <li
-              key={index}
-              className="flex items-center space-x-4 p-2 hover:bg-gray-200 rounded"
-            >
-              <div className="w-10 h-10 bg-gray-400 rounded-full" />
-              <div>
-                <p className="font-semibold">{user.name}</p>
-                <p className="text-sm text-gray-600">{user.lastMessage}</p>
-              </div>
-              {user.unread && (
-                <span className="h-3 w-3 bg-blue-500 rounded-full ml-auto" />
-              )}
-            </li>
-          ))}
-        </ul> */}
       </div>
       {/* Add Room Form */}
       {showAddRoomForm && (
@@ -782,15 +775,7 @@ export default function ChatWeb() {
                   Chưa có tin nhắn nào
                 </p>
               ) : (
-                messages.map((message, index) => {
-                  // Chuyển đổi thời gian tạo thành đối tượng Date
-                  const messageDate = new Date(message.createdAt);
-                  const timeString = messageDate.toLocaleString("en-US", {
-                    weekday: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-
+                formattedMessages.map((message, index) => {
                   return (
                     <div
                       key={index}
@@ -832,7 +817,8 @@ export default function ChatWeb() {
                                 : "right-0 mt-14"
                             } top-0 bg-black p-2 rounded-xl z-10`}
                           >
-                            {timeString} {/* Hiển thị thời gian */}
+                            <div>{message.timeString}</div>
+                            {/* Hiển thị thời gian */}
                           </p>
                         )}
                       </div>

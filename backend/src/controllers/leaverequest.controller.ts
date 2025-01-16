@@ -24,7 +24,10 @@ export class LeaveRequestController {
       new Date(date),
     );
   }
-
+  @Get('/user/:userId')
+  async getLeaveRequestsByUser(@Param('userId') userId: string) {
+    return await this.leaveRequestService.getLeaveRequestsByUser(userId);
+  }
   @Put('/:id/status')
   async updateLeaveRequestStatus(
     @Param('id') requestId: string,

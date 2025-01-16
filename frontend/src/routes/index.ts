@@ -18,6 +18,7 @@ import ChangePassword from "../pages/PageUser/ChangePassword";
 import ProjectList from "../pages/PageUser/ProjectList";
 import ViewAttendance from "../components/admin/ViewAttendance";
 import EditAttendance from "../components/admin/EditAttendance";
+import LeaveRequestList from "../pages/PageUser/LeaveRequestList";
 export const routes = [
   {
     path: "/",
@@ -50,6 +51,10 @@ export const routes = [
   {
     path: "/project-list",
     page: ProjectList,
+  },
+  {
+    path: "/leave-request",
+    page: LeaveRequestList,
   },
   {
     path: "*",
