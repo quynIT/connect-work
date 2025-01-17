@@ -50,11 +50,11 @@ interface Message {
 interface Room {
   id: string;
   name: string;
-  members: string[]; // Danh sách các thành viên trong phòng
-  avtroom: string; // URL avatar của phòng
-  createdAt: Date; // Thời gian tạo phòng, có thể là Timestamp hoặc Date
-  lastMessage?: string; // Tin nhắn cuối cùng (tùy chọn)
-  lastMessageTime?: Date | null; // Thời gian tin nhắn cuối cùng (tùy chọn)
+  members: string[];
+  avtroom: string;
+  createdAt: Date;
+  lastMessage?: string;
+  lastMessageTime?: Date | null;
 }
 
 export default function ChatWeb() {
