@@ -121,6 +121,7 @@ export class PayrollService {
   // Hàm mới: Lấy thông tin tổng lương của user
   async getPayrollSummaries(): Promise<
     {
+      _id: string;
       name: string;
       avt: string;
       salary: number;
@@ -132,7 +133,7 @@ export class PayrollService {
     // Lấy danh sách tất cả user với các thông tin cần thiết
     const users = await this.userRepository.getByCondition(
       {}, // Không có điều kiện để lấy tất cả user
-      'name avt salary',
+      'name avt salary _id',
     );
 
     // Kiểm tra nếu không có user nào
@@ -164,6 +165,7 @@ export class PayrollService {
       const totalUnpaidSalary = totalExpectedSalary - totalPaidSalary;
 
       return {
+        _id: user._id.toString(),
         name: user.name,
         avt: user.avt,
         salary: parseFloat(user.salary),

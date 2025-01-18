@@ -38,4 +38,9 @@ export class AttendanceRecordController {
       year,
     );
   }
+  // API lấy dữ liệu chấm công của một user (không giới hạn theo năm)
+  @Get('/user-attendance-details')
+  async getUserAttendanceDetails(@Query('user_id') userId: string) {
+    return await this.attendanceRecordService.getUserAttendanceDetails(userId);
+  }
 }

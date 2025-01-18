@@ -10,6 +10,8 @@ import {
   NotFoundException,
   Query,
   BadRequestException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { AttendanceFormService } from '../services/attendanceform.service';
 import { AttendanceForm } from '../models/attendanceform.model';
@@ -24,15 +26,21 @@ export class AttendanceFormController {
 
   // Tạo form điểm danh mới
   @Post('/create')
-  // @UseGuards(AuthGuard('jwt'))
   async createAttendanceForm(
     @Req() req: any,
     @Body() createForm: CreateAttendanceFormDto,
   ) {
-    return this.attendanceFormService.createAttendanceForm(
-      req.user,
-      createForm,
-    );
+    try {
+      // Gọi service để tạo form điểm danh
+      const newForm = await this.attendanceFormService.createAttendanceForm(
+        req.user, // Lấy thông tin người dùng từ request (đã được bảo vệ bởi guard JWT)
+        createForm, // Tham số form điểm danh
+      );
+      return newForm; // Trả về form điểm danh vừa tạo
+    } catch (error) {
+      // Nếu có lỗi (ví dụ: ngày đã có form), ném lỗi và trả về thông báo
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
   }
 
   // Lấy tất cả các form điểm danh

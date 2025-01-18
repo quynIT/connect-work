@@ -18,7 +18,24 @@ export class AttendanceFormService {
     user: User,
     attendanceFormDto: CreateAttendanceFormDto,
   ) {
-    // Thêm user ID vào danh sách nhân viên nếu chưa có
+    // Kiểm tra và chuyển đổi ngày thành đối tượng Date hợp lệ
+    const formDate = new Date(attendanceFormDto.date);
+
+    if (isNaN(formDate.getTime())) {
+      throw new Error('Ngày tìm kiếm không hợp lệ');
+    }
+
+    // Kiểm tra xem ngày đã có form điểm danh chưa
+    const existingForm =
+      await this.attendanceFormRepository.findByDate(formDate);
+
+    if (existingForm) {
+      throw new Error(
+        `Đã có form điểm danh cho ngày ${formDate.toISOString().split('T')[0]}`, // Trả về ngày ở định dạng YYYY-MM-DD
+      );
+    }
+
+    // Nếu chưa có form điểm danh, tạo mới
     const newAttendanceForm = await this.attendanceFormRepository.create(
       attendanceFormDto as unknown as Partial<AttendanceForm>,
     );

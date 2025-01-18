@@ -1,31 +1,21 @@
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const members = [
-  {
-    name: "Carry Anna",
-    email: "annac34@gmail.com",
-    mobile: "+912346578",
-    city: "Budapest",
-    lastActive: "34 min ago",
-    joined: "Dec 12, 12:56 PM",
-    image: "/path/to/image1.jpg", // Replace with the actual image path
-  },
-  {
-    name: "Milind Mikuja",
-    email: "mimiku@yahoo.com",
-    mobile: "+8801564768976",
-    city: "Manchester",
-    lastActive: "6 hours ago",
-    joined: "Dec 9, 2:28 PM",
-    image: "/path/to/image2.jpg",
-  },
-  // Add other members similarly
-];
 
 export default function MemberList() {
   const navigate = useNavigate();
+  const [members, setMembers] = useState([]);
+
+  useEffect(() => {
+    // Gọi API để lấy dữ liệu thành viên
+    fetch("http://localhost:3000/user/list")
+      .then((response) => response.json())
+      .then((data) => {
+        setMembers(data); // Lưu dữ liệu vào state
+      })
+      .catch((error) => console.error("Error fetching members:", error));
+  }, []);
+
   return (
     <div
       className=" text-white min-h-screen p-10 rounded-xl"
@@ -68,16 +58,18 @@ export default function MemberList() {
               >
                 <td className="p-3 flex items-center">
                   <img
-                    src={member.image}
+                    src={member.avt}
                     alt={member.name}
                     className="w-8 h-8 rounded-full mr-3"
                   />
                   {member.name}
                 </td>
                 <td className="p-3 text-gray-300">{member.email}</td>
-                <td className="p-3 text-gray-300">{member.mobile}</td>
-                <td className="p-3 text-gray-300">{member.city}</td>
-                <td className="p-3 text-gray-300">{member.joined}</td>
+                <td className="p-3 text-gray-300">{member.phone}</td>
+                <td className="p-3 text-gray-300">{member.address}</td>
+                <td className="p-3 text-gray-300">
+                  {new Date(member.createdAt).toLocaleString()}
+                </td>
                 <td className="p-3 flex space-x-3">
                   <EyeIcon
                     className="w-5 h-5 text-blue-400 hover:text-blue-300 cursor-pointer"

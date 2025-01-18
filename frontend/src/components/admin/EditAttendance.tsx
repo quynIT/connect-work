@@ -94,7 +94,15 @@ const EditAttendance = () => {
           body: JSON.stringify(attendanceData),
         }
       );
-
+      const data = await response.json();
+      if (data && data._id) {
+        // Lưu form ID vào attendance records API
+        await fetch("http://localhost:3000/attendance-records/from-form", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ form_id: data._id }),
+        });
+      }
       if (!response.ok) throw new Error("Failed to save changes");
 
       // Optional: Show success message

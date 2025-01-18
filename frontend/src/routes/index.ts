@@ -19,6 +19,7 @@ import ProjectList from "../pages/PageUser/ProjectList";
 import ViewAttendance from "../components/admin/ViewAttendance";
 import EditAttendance from "../components/admin/EditAttendance";
 import LeaveRequestList from "../pages/PageUser/LeaveRequestList";
+import MonthlyPayroll from "../components/admin/MonthlyPayroll";
 export const routes = [
   {
     path: "/",
@@ -105,5 +106,9 @@ export const adminRoutes = [
   {
     path: "/admin/edit-attendance/:id",
     page: EditAttendance,
+  },
+  {
+    path: "/admin/monthly-salary/:id",
+    page: MonthlyPayroll,
   },
 ];

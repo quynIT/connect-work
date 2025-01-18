@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { FiEye } from "react-icons/fi";
+import { Link } from "react-router-dom";
 
 interface Member {
+  _id: string;
   name: string;
   avt: string;
   salary: number;
@@ -14,6 +16,7 @@ const fetchMembersData = async (): Promise<Member[]> => {
   const response = await fetch("http://localhost:3000/payrolls/summary");
   const data = await response.json();
   return data.map((item: any) => ({
+    _id: item._id,
     name: item.name,
     avt: item.avt,
     salary: item.salary,
@@ -58,7 +61,7 @@ export default function MgSalary(): JSX.Element {
           <thead>
             <tr className="text-gray-400">
               <th className="p-3">Member (Nhân viên)</th>
-              <th className="p-3">Monthly Salary (Lương/tháng)</th>
+              <th className="p-3">Monthly Salary (Lương/Ngày)</th>
               <th className="p-3">Total Salary Due (Lương phải nhận)</th>
               <th className="p-3">Salary Received (Lương đã nhận)</th>
               <th className="p-3">Remaining Salary (Lương công ty nợ)</th>
@@ -66,9 +69,9 @@ export default function MgSalary(): JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {members.map((member, index) => (
+            {members.map((member) => (
               <tr
-                key={index}
+                key={member._id}
                 className="hover:bg-gray-700 transition-colors cursor-pointer"
               >
                 <td className="p-3 flex items-center mt-3">
@@ -88,7 +91,9 @@ export default function MgSalary(): JSX.Element {
                   {member.totalUnpaidSalary}
                 </td>
                 <td className="p-3">
-                  <FiEye className="text-blue-500 cursor-pointer" />
+                  <Link to={`/admin/monthly-salary/${member._id}`}>
+                    <FiEye className="text-blue-500 cursor-pointer" />
+                  </Link>
                 </td>
               </tr>
             ))}

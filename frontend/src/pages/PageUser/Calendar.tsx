@@ -135,13 +135,18 @@ export default function Calendar() {
       );
       const data: AttendanceRecord[] = await response.json();
 
-      // Transform API data to match AttendanceStatus type
+      // Chuyển đổi dữ liệu API thành kiểu AttendanceStatus
       const transformedData: AttendanceStatus[] = data.map((record) => ({
         absent: !record.is_present,
-        date: new Date(record.date).toISOString().split("T")[0],
+        date: new Date(record.date).toISOString().split("T")[0], // Chuyển sang định dạng yyyy-mm-dd
         time: record.is_present ? "8:00 - 17:00" : undefined,
         reason: record.reason || undefined,
       }));
+
+      // Sắp xếp các ngày theo thứ tự tăng dần
+      transformedData.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
 
       return transformedData;
     } catch (error) {
@@ -155,11 +160,29 @@ export default function Calendar() {
     month: number,
     year: number
   ) => {
-    return data.filter((day) => {
-      const date = new Date(day.date);
-      return date.getMonth() === month && date.getFullYear() === year;
+    const currentDate = new Date();
+    const currentDay = currentDate.getDate(); // Ngày hiện tại
+
+    // Tạo một mảng chứa các ngày từ 1 đến ngày hiện tại
+    const daysInMonth = Array.from({ length: currentDay }, (_, i) => i + 2); // [1, 2, 3, ..., currentDay]
+
+    // Tạo dữ liệu cho mỗi ngày trong tháng
+    const result: AttendanceStatus[] = daysInMonth.map((day) => {
+      const date = new Date(year, month, day);
+      const dateString = date.toISOString().split("T")[0]; // Format: yyyy-mm-dd
+      const attendanceData = data.find((d) => d.date === dateString);
+
+      return {
+        absent: attendanceData ? attendanceData.absent : true, // Nếu không có dữ liệu thì coi như vắng mặt
+        date: dateString,
+        time: attendanceData ? attendanceData.time : undefined,
+        reason: attendanceData ? attendanceData.reason : undefined,
+      };
     });
+
+    return result;
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);

@@ -87,6 +87,7 @@ export default function MgAttendance() {
         reason: item.reason || null,
       })),
     };
+
     try {
       const response = await fetch(
         "http://localhost:3000/attendance-forms/create",
@@ -96,6 +97,14 @@ export default function MgAttendance() {
           body: JSON.stringify(payload),
         }
       );
+
+      // Kiểm tra nếu response trả về lỗi
+      if (!response.ok) {
+        const errorData = await response.json(); // Lấy thông tin lỗi từ server
+        throw new Error(
+          errorData.message || "Có lỗi xảy ra khi tạo form điểm danh"
+        );
+      }
 
       const data = await response.json();
       if (data && data._id) {
@@ -109,9 +118,12 @@ export default function MgAttendance() {
         alert("Form đã được lưu thành công!");
       }
     } catch (error) {
+      // Xử lý lỗi trả về từ server hoặc lỗi khác
       console.error("Error saving attendance form:", error);
+      alert(`Lỗi: ${error.message}`); // Hiển thị thông báo lỗi cho người dùng
     }
   };
+
   const updateAttendance = (
     userId: string,
     key: keyof Attendance,
@@ -419,6 +431,8 @@ export default function MgAttendance() {
                       value={formDate}
                       onChange={handleFormDateChange}
                       className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 bg-gray-50 hover:bg-white transition-colors duration-200"
+                      // Giới hạn ngày tối đa là ngày hiện tại và mặc định là ngày hiện tại
+                      max={new Date().toISOString().split("T")[0]}
                     />
                   </div>
 
