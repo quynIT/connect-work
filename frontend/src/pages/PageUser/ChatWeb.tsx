@@ -4,7 +4,13 @@ import {
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import "../../App.css";
-import React, { useRef, useEffect, useState } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { db } from "../../firebase/config";
 import avtdefault from "../../assets/user/image/avt.jpg";
 import {
@@ -56,7 +62,14 @@ interface Room {
   lastMessage?: string;
   lastMessageTime?: Date | null;
 }
-
+interface RoomListProps {
+  rooms: Room[];
+  selectedRoom: Room | null;
+  setSelectedRoom: (room: Room) => void;
+}
+interface ActiveUsersProps {
+  users: User[];
+}
 export default function ChatWeb() {
   const [showAddRoomForm, setShowAddRoomForm] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
@@ -74,13 +87,17 @@ export default function ChatWeb() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const memoizedRooms = useMemo(() => rooms, [rooms]);
+  const memoizedSetSelectedRoom = useCallback(setSelectedRoom, []);
   const [userProfile, setUserProfile] = useState<{
     name: string;
     avt: string;
   } | null>(null);
+
   //Lấy thông tin người dùng từ firebase
   useEffect(() => {
     const fetchUserProfile = async () => {
+      if (users.length > 0) return;
       try {
         const profile = await getUserProfile();
         setUsername(profile.username);
@@ -113,16 +130,18 @@ export default function ChatWeb() {
     };
 
     fetchUserProfile();
-  }, []);
+  }, [users]);
 
   // Lấy tt user danh sách phòng chat từ Firestore
 
   useEffect(() => {
+    if (rooms.length > 0) return; // Nếu danh sách phòng đã có, không cần phải load lại
     let unsubscribe: (() => void) | undefined;
     const fetchRooms = async () => {
       try {
         const profile = await getUserProfile();
         setUsername(profile.username);
+
         const roomsRef = collection(db, "rooms");
         const q = query(
           roomsRef,
@@ -132,7 +151,6 @@ export default function ChatWeb() {
         const unsubscribe = onSnapshot(q, (snapshot) => {
           const fetchedRooms: Room[] = snapshot.docs.map((doc) => {
             const data = doc.data();
-
             return {
               id: doc.id,
               name: data.name || "Noname",
@@ -146,7 +164,7 @@ export default function ChatWeb() {
             };
           });
           fetchedRooms.sort((a, b) => {
-            const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0; // Lấy thời gian tính bằng milliseconds
+            const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0;
             const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
             return timeB - timeA; // Sắp xếp từ tin nhắn gần nhất
           });
@@ -165,7 +183,7 @@ export default function ChatWeb() {
       // Cleanup subscription khi component unmount
       unsubscribe?.();
     };
-  }, []);
+  }, [rooms]); // Thêm phụ thuộc vào rooms, nếu nó đã có thì không chạy lại
 
   // Lấy tin nhắn của phòng khi chọn phòng
   useEffect(() => {
@@ -541,6 +559,63 @@ export default function ChatWeb() {
       }),
     };
   });
+
+  const RoomList: React.FC<RoomListProps> = React.memo(
+    ({ rooms, selectedRoom, setSelectedRoom }) => {
+      const handleSelectRoom = useCallback(
+        (room: Room) => setSelectedRoom(room), // Ép kiểu tham số room là Room
+        [setSelectedRoom]
+      );
+
+      return rooms.map((room) => (
+        <li
+          key={room.id}
+          onClick={() => handleSelectRoom(room)}
+          className={`cursor-pointer flex items-center p-2 ${
+            selectedRoom?.id === room.id ? "bg-blue-100" : ""
+          }`}
+        >
+          <img
+            loading="lazy"
+            src={room.avtroom || avtdefault} // Đảm bảo avtdefault đã được khai báo trước
+            alt={`${room.name} avatar`}
+            className="w-10 h-10 rounded-full mr-3"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement; // Ép kiểu e.target là HTMLImageElement
+              target.src = avtdefault; // Đổi ảnh mặc định khi có lỗi
+            }}
+          />
+          <div>
+            <h3 className="font-semibold">{room.name}</h3>
+            <p className="text-sm text-gray-600 truncate">{room.lastMessage}</p>
+          </div>
+        </li>
+      ));
+    }
+  );
+  const ActiveUsers: React.FC<ActiveUsersProps> = React.memo(({ users }) => {
+    return (
+      <div className="w-1/4 bg-white p-4 overflow-y-auto border-l">
+        <h2 className="text-lg font-semibold mb-4">Active</h2>
+        <ul>
+          {users.map((user) => (
+            <li
+              key={user.username}
+              className="flex items-center space-x-4 p-2 hover:bg-gray-200 rounded"
+            >
+              <img
+                src={user.avt}
+                alt={user.name}
+                className="w-10 h-10 rounded-full"
+              />
+              <p className="font-semibold">{user.name}</p>
+              <span className="h-3 w-3 bg-green-500 rounded-full ml-auto" />
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  });
   return (
     <div className="flex mt-[100px] h-[85vh] mb-5">
       {/* Left Sidebar - Chat List */}
@@ -560,27 +635,12 @@ export default function ChatWeb() {
           className="w-full px-3 py-2 mb-4 border rounded"
         />
         <ul>
-          {rooms.map((room) => (
-            <li
-              key={room.id}
-              onClick={() => setSelectedRoom(room)}
-              className={`cursor-pointer flex items-center p-2 ${
-                selectedRoom?.id === room.id ? "bg-blue-100" : ""
-              }`}
-            >
-              <img
-                src={room.avtroom || avtdefault}
-                alt={`${room.name} avatar`}
-                className="w-10 h-10 rounded-full mr-3"
-              />
-              <div>
-                <h3 className="font-semibold">{room.name}</h3>
-                <p className="text-sm text-gray-600 truncate">
-                  {room.lastMessage}
-                </p>
-              </div>
-            </li>
-          ))}
+          <RoomList
+            rooms={memoizedRooms}
+            selectedRoom={selectedRoom}
+            setSelectedRoom={memoizedSetSelectedRoom}
+          />
+          ;
         </ul>
       </div>
       {/* Add Room Form */}
@@ -854,25 +914,7 @@ export default function ChatWeb() {
       </div>
 
       {/* Right Sidebar - Active Users */}
-      <div className="w-1/4 bg-white p-4 overflow-y-auto border-l">
-        <h2 className="text-lg font-semibold mb-4">Active</h2>
-        <ul>
-          {users.map((user) => (
-            <li
-              key={user.username}
-              className="flex items-center space-x-4 p-2 hover:bg-gray-200 rounded"
-            >
-              <img
-                src={user.avt}
-                alt={user.name}
-                className="w-10 h-10 rounded-full"
-              />
-              <p className="font-semibold">{user.name}</p>
-              <span className="h-3 w-3 bg-green-500 rounded-full ml-auto" />
-            </li>
-          ))}
-        </ul>
-      </div>
+      <ActiveUsers users={users} />
     </div>
   );
 }

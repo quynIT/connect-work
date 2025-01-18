@@ -33,21 +33,34 @@ function AddEmployee() {
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const storage = getStorage();
-
-      // Tạo một đường dẫn cho ảnh thumbnail
-      const fileName = file.name.split(".")[0] + "-thumbnail.jpg"; // Thêm "-thumbnail" vào tên file
-      const fileRef = ref(storage, `avatars/${fileName}`);
-
-      // Upload ảnh thumbnail lên Firebase
-      await uploadBytes(fileRef, file);
-
-      // Lấy URL của ảnh thumbnail sau khi upload thành công
-      const fileURL = await getDownloadURL(fileRef);
-
-      setImage(fileURL); // Lưu URL ảnh thumbnail vào state
+      // Kiểm tra dung lượng ảnh (100 KB = 100 * 1024 bytes)
+      const maxFileSize = 100 * 1024; // 100 KB
+      if (file.size > maxFileSize) {
+        alert("Dung lượng ảnh vượt quá 100KB. Vui lòng chọn ảnh nhỏ hơn.");
+        return;
+      }
+  
+      try {
+        const storage = getStorage();
+  
+        // Tạo một đường dẫn cho ảnh thumbnail
+        const fileName = file.name.split(".")[0] + "-thumbnail.jpg"; // Thêm "-thumbnail" vào tên file
+        const fileRef = ref(storage, `avatars/${fileName}`);
+  
+        // Upload ảnh thumbnail lên Firebase
+        await uploadBytes(fileRef, file);
+  
+        // Lấy URL của ảnh thumbnail sau khi upload thành công
+        const fileURL = await getDownloadURL(fileRef);
+  
+        setImage(fileURL); // Lưu URL ảnh thumbnail vào state
+      } catch (error) {
+        console.error("Lỗi khi tải lên ảnh:", error);
+        alert("Đã xảy ra lỗi trong quá trình tải lên ảnh.");
+      }
     }
   };
+  
 
   useEffect(() => {
     const usernameFromEmail = email.split("@")[0];
