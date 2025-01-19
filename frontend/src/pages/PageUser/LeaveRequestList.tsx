@@ -36,11 +36,22 @@ const LeaveRequestList = () => {
         const response = await fetch(
           `http://localhost:3000/leave-requests/user/${userId}`
         );
+
+        if (!response.ok) {
+          // Nếu phản hồi không thành công, đặt giá trị rỗng
+          console.error(`Failed to fetch leave requests: ${response.status}`);
+          setRequests([]);
+          setFilteredRequests([]);
+          return;
+        }
+
         const data = await response.json();
-        setRequests(data);
-        setFilteredRequests(data);
+        setRequests(Array.isArray(data) ? data : []); // Đảm bảo data là mảng
+        setFilteredRequests(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching leave requests:", error);
+        setRequests([]);
+        setFilteredRequests([]); // Xử lý lỗi, đặt giá trị mặc định
       }
     };
 
@@ -147,7 +158,7 @@ const LeaveRequestList = () => {
 
         {/* Request Cards */}
         <div className="space-y-4">
-          {filteredRequests.length === 0 ? (
+          {Array.isArray(filteredRequests) && filteredRequests.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg">
               <p className="text-gray-500">No leave requests found</p>
             </div>

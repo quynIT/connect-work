@@ -327,6 +327,7 @@ export default function Calendar() {
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
                   }
+                  min={new Date().toISOString().split("T")[0]} // Ngày hiện tại theo định dạng YYYY-MM-DD
                   required
                 />
               </div>

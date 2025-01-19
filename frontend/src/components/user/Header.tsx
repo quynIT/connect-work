@@ -39,7 +39,7 @@ export default function Header() {
         {/* Navbar */}
         <nav className="fixed w-full flex justify-between bg-gray-900 text-white z-20 top-0 left-0">
           <div className="px-5 xl:px-12 py-6 flex w-full items-center">
-            <a className="text-3xl font-bold font-heading" href="#">
+            <a className="text-3xl font-bold font-heading" href="/">
               Connect Work
             </a>
             {/* Nav Links */}

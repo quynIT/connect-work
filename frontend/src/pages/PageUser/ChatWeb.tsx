@@ -25,6 +25,7 @@ import {
   updateDoc,
   doc,
   limit,
+  startAfter,
 } from "firebase/firestore";
 import {
   getStorage,
@@ -52,6 +53,8 @@ interface Message {
   avt: string;
   roomId: string;
   createdAt: Date;
+  imageUrl?: string; // URL của ảnh nếu có
+  type: "text" | "image"; // Loại tin nhắn
 }
 interface Room {
   id: string;
@@ -61,6 +64,8 @@ interface Room {
   createdAt: Date;
   lastMessage?: string;
   lastMessageTime?: Date | null;
+  unreadCount?: number; // Số tin nhắn chưa đọc
+  lastMessageUsername?: string; // Username của người gửi tin nhắn cuối
 }
 interface RoomListProps {
   rooms: Room[];
@@ -84,11 +89,16 @@ export default function ChatWeb() {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const memoizedRooms = useMemo(() => rooms, [rooms]);
   const memoizedSetSelectedRoom = useCallback(setSelectedRoom, []);
+  const [unreadRooms, setUnreadRooms] = useState<{ [key: string]: number }>({});
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastMessageRef, setLastMessageRef] = useState<any>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     name: string;
     avt: string;
@@ -135,6 +145,7 @@ export default function ChatWeb() {
   // Lấy tt user danh sách phòng chat từ Firestore
 
   useEffect(() => {
+    if (!selectedRoom?.id) return;
     if (rooms.length > 0) return; // Nếu danh sách phòng đã có, không cần phải load lại
     let unsubscribe: (() => void) | undefined;
     const fetchRooms = async () => {
@@ -183,52 +194,67 @@ export default function ChatWeb() {
       // Cleanup subscription khi component unmount
       unsubscribe?.();
     };
-  }, [rooms]); // Thêm phụ thuộc vào rooms, nếu nó đã có thì không chạy lại
+  }, [selectedRoom?.id]); // Thêm phụ thuộc vào rooms, nếu nó đã có thì không chạy lại
 
   // Lấy tin nhắn của phòng khi chọn phòng
   useEffect(() => {
-    // Nếu không có phòng được chọn, xóa danh sách tin nhắn
     if (!selectedRoom) {
-      setMessages([]); // Reset tin nhắn khi không có phòng
+      setMessages([]);
+      setHasMore(true);
+      setLastMessageRef(null);
       return;
     }
 
+    const loadMessages = async () => {
+      const messagesRef = collection(db, "messages");
+      let q = query(
+        messagesRef,
+        where("roomId", "==", selectedRoom.id),
+        orderBy("createdAt", "desc"),
+        limit(20)
+      );
+
+      const snapshot = await getDocs(q);
+      const fetchedMessages = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate(),
+      })) as Message[];
+
+      setMessages(fetchedMessages.reverse());
+      setLastMessageRef(snapshot.docs[0]);
+      setHasMore(snapshot.docs.length === 20);
+    };
+
+    loadMessages();
+
+    // Lắng nghe tin nhắn mới
     const messagesRef = collection(db, "messages");
     const q = query(
       messagesRef,
       where("roomId", "==", selectedRoom.id),
-      orderBy("createdAt", "asc")
+      orderBy("createdAt", "desc"),
+      limit(1)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedMessages: Message[] = snapshot.docs
-        .map((doc) => {
-          const data = doc.data();
-          if (
-            typeof data.text === "string" &&
-            typeof data.username === "string" &&
-            typeof data.name === "string" &&
-            typeof data.avt === "string" &&
-            typeof data.roomId === "string" &&
-            data.createdAt
-          ) {
-            return {
-              id: doc.id,
-              text: data.text,
-              username: data.username,
-              name: data.name,
-              avt: data.avt,
-              roomId: data.roomId,
-              createdAt: data.createdAt.toDate(), // Chuyển Timestamp Firestore sang Date
-            };
-          } else {
-            console.warn("Invalid message data:", data); // Log nếu dữ liệu không hợp lệ
-            return null;
-          }
-        })
-        .filter((msg): msg is Message => msg !== null); // Lọc tin nhắn hợp lệ
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const newMessage = {
+            id: change.doc.id,
+            ...change.doc.data(),
+            createdAt: change.doc.data().createdAt?.toDate(),
+          } as Message;
 
-      setMessages(fetchedMessages);
+          setMessages((prev) => {
+            // Kiểm tra xem tin nhắn đã tồn tại chưa
+            if (!prev.find((msg) => msg.id === newMessage.id)) {
+              return [...prev, newMessage];
+            }
+            return prev;
+          });
+        }
+      });
     });
 
     return () => unsubscribe();
@@ -292,6 +318,55 @@ export default function ChatWeb() {
     document.body.classList.add("no-footer"); // Thêm lớp 'no-footer' khi vào trang
     return () => document.body.classList.remove("no-footer"); // Gỡ lớp khi rời trang
   }, []);
+
+  // Cập nhật useEffect cho việc lắng nghe tin nhắn mới
+  useEffect(() => {
+    if (!username) return;
+
+    const messagesRef = collection(db, "messages");
+    const q = query(messagesRef, orderBy("createdAt", "desc"), limit(1));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const newMessage = change.doc.data();
+          const roomId = newMessage.roomId;
+
+          // Kiểm tra nếu tin nhắn mới không phải từ user hiện tại và không đang ở trong phòng đó
+          if (
+            newMessage.username !== username &&
+            (!selectedRoom || selectedRoom.id !== roomId)
+          ) {
+            setUnreadRooms((prev) => ({
+              ...prev,
+              [roomId]: (prev[roomId] || 0) + 1,
+            }));
+
+            // Cập nhật lại danh sách phòng để đưa phòng có tin nhắn mới lên đầu
+            setRooms((prevRooms) => {
+              const updatedRooms = [...prevRooms];
+              const roomIndex = updatedRooms.findIndex((r) => r.id === roomId);
+
+              if (roomIndex !== -1) {
+                const room = updatedRooms[roomIndex];
+                updatedRooms.splice(roomIndex, 1);
+                updatedRooms.unshift({
+                  ...room,
+                  lastMessage: newMessage.text,
+                  lastMessageTime: new Date(),
+                  lastMessageUsername: newMessage.username,
+                });
+              }
+
+              return updatedRooms;
+            });
+          }
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [username, selectedRoom]);
   // Tìm kiếm user trong Firestore ( Nếu dữ liệu lớn tạo thêm trường keyword để tìm kiếm)
   const handleSearchUser = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const queryText = e.target.value.trim().toLowerCase();
@@ -401,61 +476,120 @@ export default function ChatWeb() {
 
   // Xử lý gửi tin nhắn
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedRoom || !userProfile) return;
+    if (!newMessage.trim() || !selectedRoom || !userProfile || !username)
+      return;
 
-    const messagesRef = collection(db, "messages");
+    // Create the message object
+    const tempId = `temp-${Date.now()}`; // Temporary ID for optimistic update
     const newMsg = {
+      id: tempId,
       text: newMessage,
       username: username,
       name: userProfile.name,
       avt: userProfile.avt,
       roomId: selectedRoom.id,
-      createdAt: serverTimestamp(),
+      createdAt: new Date(), // Use current time for immediate display
     };
 
-    try {
-      await addDoc(messagesRef, newMsg);
+    // Optimistically update UI
+    setMessages((prevMessages) => [...prevMessages, newMsg]);
+    setNewMessage(""); // Clear input immediately
+    scrollToBottom();
 
-      // Cập nhật lastMessage và lastMessageTime cho phòng
+    // Optimistically update room's last message
+    setRooms((prevRooms) => {
+      return prevRooms
+        .map((room) =>
+          room.id === selectedRoom.id
+            ? {
+                ...room,
+                lastMessage: newMessage,
+                lastMessageTime: new Date(),
+              }
+            : room
+        )
+        .sort((a, b) => {
+          const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0;
+          const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
+          return timeB - timeA;
+        });
+    });
+
+    try {
+      // Actually send the message to Firebase
+      const messagesRef = collection(db, "messages");
+      const docRef = await addDoc(messagesRef, {
+        text: newMessage,
+        username: username,
+        name: userProfile.name,
+        avt: userProfile.avt,
+        roomId: selectedRoom.id,
+        createdAt: serverTimestamp(),
+      });
+
+      // Update room's last message in Firebase
       const roomRef = doc(db, "rooms", selectedRoom.id);
       await updateDoc(roomRef, {
         lastMessage: newMessage,
         lastMessageTime: serverTimestamp(),
       });
+
+      // Update the temporary message with the real one
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === tempId
+            ? {
+                ...msg,
+                id: docRef.id,
+                createdAt: new Date(), // Use server timestamp
+              }
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error sending message:", error);
+
+      // Revert optimistic updates if sending fails
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg.id !== tempId)
+      );
+
       setRooms((prevRooms) => {
+        const lastMessage = messages[messages.length - 1]?.text || "";
+        const lastMessageTime =
+          messages[messages.length - 1]?.createdAt || null;
+
         return prevRooms
           .map((room) =>
             room.id === selectedRoom.id
               ? {
                   ...room,
-                  lastMessage: newMessage,
-                  lastMessageTime: new Date(), // Cập nhật thời gian tin nhắn
+                  lastMessage,
+                  lastMessageTime,
                 }
               : room
           )
           .sort((a, b) => {
-            // Đảm bảo so sánh thời gian chính xác
             const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0;
             const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
-            return timeB - timeA; // Sắp xếp từ tin nhắn gần nhất
+            return timeB - timeA;
           });
       });
-      setNewMessage("");
-      scrollToBottom();
-    } catch (error) {
-      console.error("Error sending message:", error);
+
+      alert("Có lỗi xảy ra khi gửi tin nhắn! Vui lòng thử lại.");
     }
   };
 
   // Hàm cuộn xuống cuối
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
     }
   };
   // Cuộn xuống khi có tin nhắn mới
   useEffect(() => {
-    scrollToBottom(); // Cuộn xuống cuối khi có tin nhắn mới hoặc chọn phòng mới
+    scrollToBottom();
   }, [messages, selectedRoom]);
   const handleSearchAddMember = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -548,6 +682,93 @@ export default function ChatWeb() {
       alert("Có lỗi xảy ra khi xóa thành viên!");
     }
   };
+  // Hàm kiểm tra kích thước file
+  const validateImageSize = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const maxSize = 300 * 1024; // 300KB
+      if (file.size > maxSize) {
+        alert("Ảnh phải nhỏ hơn 300KB");
+        resolve(false);
+      }
+      resolve(true);
+    });
+  };
+  // Hàm load thêm tin nhắn cũ
+  const loadMoreMessages = async () => {
+    if (!selectedRoom || !lastMessageRef || isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const messagesRef = collection(db, "messages");
+      const q = query(
+        messagesRef,
+        where("roomId", "==", selectedRoom.id),
+        orderBy("createdAt", "desc"),
+        startAfter(lastMessageRef),
+        limit(20)
+      );
+
+      const snapshot = await getDocs(q);
+      const olderMessages = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate(),
+      })) as Message[];
+
+      setMessages((prev) => [...olderMessages.reverse(), ...prev]);
+      setLastMessageRef(snapshot.docs[0]);
+      setHasMore(snapshot.docs.length === 20);
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+  // Hàm xử lý upload ảnh
+  const handleImageUploadMes = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedRoom || !userProfile || !username) return;
+
+    const isValid = await validateImageSize(file);
+    if (!isValid) return;
+
+    setUploadingImage(true);
+    try {
+      const storage = getStorage();
+      const storageRef = ref(
+        storage,
+        `chat-images/${selectedRoom.id}/${Date.now()}_${file.name}`
+      );
+      await uploadBytesResumable(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
+
+      // Gửi tin nhắn chứa ảnh
+      await addDoc(collection(db, "messages"), {
+        type: "image",
+        imageUrl,
+        text: "",
+        username: username,
+        name: userProfile.name,
+        avt: userProfile.avt,
+        roomId: selectedRoom.id,
+        createdAt: serverTimestamp(),
+      });
+
+      // Cập nhật last message của room
+      const roomRef = doc(db, "rooms", selectedRoom.id);
+      await updateDoc(roomRef, {
+        lastMessage: "Đã gửi một ảnh",
+        lastMessageTime: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Lỗi khi tải ảnh lên!");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
   const formattedMessages = messages.map((message) => {
     const messageDate = new Date(message.createdAt);
     return {
@@ -559,36 +780,47 @@ export default function ChatWeb() {
       }),
     };
   });
-
+  const handleSelectRoom = useCallback((room: Room) => {
+    setSelectedRoom(room);
+    // Xóa số tin nhắn chưa đọc khi vào phòng
+    setUnreadRooms((prev) => ({
+      ...prev,
+      [room.id]: 0,
+    }));
+  }, []);
   const RoomList: React.FC<RoomListProps> = React.memo(
     ({ rooms, selectedRoom, setSelectedRoom }) => {
-      const handleSelectRoom = useCallback(
-        (room: Room) => setSelectedRoom(room), // Ép kiểu tham số room là Room
-        [setSelectedRoom]
-      );
-
       return rooms.map((room) => (
         <li
           key={room.id}
           onClick={() => handleSelectRoom(room)}
-          className={`cursor-pointer flex items-center p-2 ${
+          className={`cursor-pointer flex items-center p-2 relative ${
             selectedRoom?.id === room.id ? "bg-blue-100" : ""
           }`}
         >
           <img
             loading="lazy"
-            src={room.avtroom || avtdefault} // Đảm bảo avtdefault đã được khai báo trước
+            src={room.avtroom || avtdefault}
             alt={`${room.name} avatar`}
             className="w-10 h-10 rounded-full mr-3"
             onError={(e) => {
-              const target = e.target as HTMLImageElement; // Ép kiểu e.target là HTMLImageElement
-              target.src = avtdefault; // Đổi ảnh mặc định khi có lỗi
+              const target = e.target as HTMLImageElement;
+              target.src = avtdefault;
             }}
           />
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold">{room.name}</h3>
             <p className="text-sm text-gray-600 truncate">{room.lastMessage}</p>
           </div>
+
+          {/* Hiển thị số tin nhắn chưa đọc */}
+          {unreadRooms[room.id] > 0 && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                {unreadRooms[room.id]}
+              </span>
+            </div>
+          )}
         </li>
       ));
     }
@@ -829,77 +1061,118 @@ export default function ChatWeb() {
             </div>
 
             {/* Messages */}
-            <div className="overflow-y-auto flex-1 mb-4">
-              {messages.length === 0 ? (
-                <p className="text-center text-gray-600">
-                  Chưa có tin nhắn nào
-                </p>
-              ) : (
-                formattedMessages.map((message, index) => {
-                  return (
-                    <div
-                      key={index}
-                      className={`flex ${
-                        message.username === username
-                          ? "justify-end"
-                          : "justify-start"
-                      } mb-2`}
-                      onMouseEnter={() => setHoveredMessageId(message.id)}
-                      onMouseLeave={() => setHoveredMessageId(null)}
-                    >
-                      {message.username !== username && (
-                        <img
-                          src={message.avt}
-                          alt={`${message.name}'s avatar`}
-                          className="w-9 h-9 rounded-full mr-2 mt-1"
-                        />
-                      )}
-                      <div
-                        className={`relative p-2 rounded-2xl max-w-xs pl-3 pr-3 break-words ${
-                          message.username === username
-                            ? "bg-yellow-800 text-white mr-2"
-                            : "bg-gray-200 text-gray-800"
-                        }`}
-                      >
-                        <p className="text-sm">{message.text}</p>
-                        {message.username !== username && (
-                          <p className="text-xs text-gray-600">
-                            {message.name}
-                          </p>
-                        )}
-
-                        {/* Hiển thị thời gian khi di chuột vào */}
-                        {hoveredMessageId === message.id && (
-                          <p
-                            className={`absolute text-xs text-white ${
-                              message.username === username
-                                ? "left-0 mt-11"
-                                : "right-0 mt-14"
-                            } top-0 bg-black p-2 rounded-xl z-10`}
-                          >
-                            <div>{message.timeString}</div>
-                            {/* Hiển thị thời gian */}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+            <div
+              ref={messagesContainerRef}
+              className="overflow-y-auto flex-1 mb-4 space-y-4 flex flex-col"
+              onScroll={(e) => {
+                const element = e.currentTarget;
+                if (element.scrollTop === 0 && hasMore && !isLoadingMore) {
+                  loadMoreMessages();
+                }
+              }}
+            >
+              {isLoadingMore && (
+                <div className="text-center py-2">
+                  <span className="text-gray-500">Đang tải tin nhắn cũ...</span>
+                </div>
               )}
-              <div ref={messagesEndRef} />
+
+              {formattedMessages.map((message, index) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.username === username
+                      ? "justify-end"
+                      : "justify-start"
+                  } mb-2`}
+                  onMouseEnter={() => setHoveredMessageId(message.id)}
+                  onMouseLeave={() => setHoveredMessageId(null)}
+                >
+                  {message.username !== username && (
+                    <img
+                      src={message.avt}
+                      alt={`${message.name}'s avatar`}
+                      className="w-9 h-9 rounded-full mr-2 mt-1"
+                    />
+                  )}
+                  <div
+                    className={`relative p-2 rounded-2xl max-w-xs ${
+                      message.username === username
+                        ? "bg-yellow-800 text-white mr-2"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                  >
+                    {message.type === "image" ? (
+                      <img
+                        src={message.imageUrl}
+                        alt="Sent image"
+                        className="max-w-full rounded-lg cursor-pointer"
+                        onClick={() => window.open(message.imageUrl, "_blank")}
+                      />
+                    ) : (
+                      <p className="text-sm">{message.text}</p>
+                    )}
+                    {message.username !== username && (
+                      <p className="text-xs text-gray-600">{message.name}</p>
+                    )}
+                    {hoveredMessageId === message.id && (
+                      <div
+                        className={`absolute text-xs ${
+                          message.username === username
+                            ? "right-full mr-2" // Tin nhắn người gửi, hiển thị bên trái
+                            : "left-full ml-2" // Tin nhắn người nhận, hiển thị bên phải
+                        } top-1/2 transform -translate-y-1/2 bg-black text-white p-2 rounded-xl whitespace-nowrap z-10`}
+                      >
+                        {message.timeString}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Message Input */}
             <div className="flex items-center border-t p-2">
+              <label className="cursor-pointer mr-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUploadMes}
+                  disabled={uploadingImage}
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-gray-500 hover:text-blue-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </label>
+
               <input
                 type="text"
                 placeholder="Aa"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 className="flex-1 px-3 py-2 border rounded-lg focus:outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
               />
               <button
                 onClick={handleSendMessage}
+                disabled={uploadingImage}
                 className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-lg"
               >
                 Gửi
