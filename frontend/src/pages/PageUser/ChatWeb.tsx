@@ -55,6 +55,8 @@ interface Message {
   createdAt: Date;
   imageUrl?: string; // URL của ảnh nếu có
   type: "text" | "image"; // Loại tin nhắn
+  pending?: boolean;
+  error?: boolean;
 }
 interface Room {
   id: string;
@@ -145,56 +147,64 @@ export default function ChatWeb() {
   // Lấy tt user danh sách phòng chat từ Firestore
 
   useEffect(() => {
-    if (!selectedRoom?.id) return;
-    if (rooms.length > 0) return; // Nếu danh sách phòng đã có, không cần phải load lại
-    let unsubscribe: (() => void) | undefined;
-    const fetchRooms = async () => {
-      try {
-        const profile = await getUserProfile();
-        setUsername(profile.username);
+    if (!username) return;
 
-        const roomsRef = collection(db, "rooms");
-        const q = query(
-          roomsRef,
-          where("members", "array-contains", profile.username) // Lọc các phòng mà người dùng tham gia
-        );
+    const roomsRef = collection(db, "rooms");
+    const q = query(roomsRef, where("members", "array-contains", username));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          const fetchedRooms: Room[] = snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              name: data.name || "Noname",
-              members: data.members || [],
-              avtroom: data.avtroom || avtdefault,
-              createdAt: data.createdAt || new Date(),
-              lastMessage: data.lastMessage,
-              lastMessageTime: data.lastMessageTime
-                ? data.lastMessageTime.toDate()
-                : null,
-            };
-          });
-          fetchedRooms.sort((a, b) => {
-            const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0;
-            const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
-            return timeB - timeA; // Sắp xếp từ tin nhắn gần nhất
-          });
-          setRooms(fetchedRooms);
-        });
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added" || change.type === "modified") {
+          const roomData = change.doc.data();
+          const roomId = change.doc.id;
 
-        return unsubscribe;
-      } catch (error) {
-        console.error("Error fetching rooms:", error);
-      }
-    };
+          // Chỉ cập nhật rooms nếu:
+          // 1. Là phòng mới được tạo
+          // 2. Hoặc không phải là phòng đang được chọn
+          // 3. Hoặc là thay đổi về thành viên/thông tin phòng (không phải last message)
+          if (
+            change.type === "added" ||
+            roomId !== selectedRoom?.id ||
+            !roomData.lastMessage
+          ) {
+            setRooms((prevRooms) => {
+              const newRooms = [...prevRooms];
+              const index = newRooms.findIndex((r) => r.id === roomId);
+              const updatedRoom = {
+                id: roomId,
+                name: roomData.name || "Noname",
+                members: roomData.members || [],
+                avtroom: roomData.avtroom || avtdefault,
+                createdAt: roomData.createdAt || new Date(),
+                lastMessage: roomData.lastMessage,
+                lastMessageTime: roomData.lastMessageTime
+                  ? roomData.lastMessageTime.toDate()
+                  : null,
+              };
 
-    fetchRooms();
+              if (index === -1) {
+                newRooms.unshift(updatedRoom);
+              } else {
+                newRooms[index] = updatedRoom;
+              }
 
-    return () => {
-      // Cleanup subscription khi component unmount
-      unsubscribe?.();
-    };
-  }, [selectedRoom?.id]); // Thêm phụ thuộc vào rooms, nếu nó đã có thì không chạy lại
+              return newRooms.sort((a, b) => {
+                const timeA = a.lastMessageTime
+                  ? a.lastMessageTime.getTime()
+                  : 0;
+                const timeB = b.lastMessageTime
+                  ? b.lastMessageTime.getTime()
+                  : 0;
+                return timeB - timeA;
+              });
+            });
+          }
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [username, selectedRoom]);
 
   // Lấy tin nhắn của phòng khi chọn phòng
   useEffect(() => {
@@ -259,6 +269,7 @@ export default function ChatWeb() {
 
     return () => unsubscribe();
   }, [selectedRoom]);
+
   useEffect(() => {
     const fetchRoomsWithLastMessage = async () => {
       try {
@@ -479,102 +490,104 @@ export default function ChatWeb() {
     if (!newMessage.trim() || !selectedRoom || !userProfile || !username)
       return;
 
-    // Create the message object
-    const tempId = `temp-${Date.now()}`; // Temporary ID for optimistic update
+    const messageText = newMessage.trim();
+    const tempId = `temp-${Date.now()}`;
+    const clientTimestamp = new Date();
+
+    // Tạo message object với trạng thái pending
     const newMsg = {
       id: tempId,
-      text: newMessage,
+      text: messageText,
       username: username,
       name: userProfile.name,
       avt: userProfile.avt,
       roomId: selectedRoom.id,
-      createdAt: new Date(), // Use current time for immediate display
-    };
-
-    // Optimistically update UI
-    setMessages((prevMessages) => [...prevMessages, newMsg]);
-    setNewMessage(""); // Clear input immediately
-    scrollToBottom();
-
-    // Optimistically update room's last message
-    setRooms((prevRooms) => {
-      return prevRooms
-        .map((room) =>
-          room.id === selectedRoom.id
-            ? {
-                ...room,
-                lastMessage: newMessage,
-                lastMessageTime: new Date(),
-              }
-            : room
-        )
-        .sort((a, b) => {
-          const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0;
-          const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
-          return timeB - timeA;
-        });
-    });
+      createdAt: clientTimestamp,
+      type: "text",
+      pending: true, // Thêm trạng thái pending
+      error: false, // Thêm trạng thái error
+    } as Message;
 
     try {
-      // Actually send the message to Firebase
+      // Cập nhật UI trước
+      setMessages((prev) => [...prev, newMsg]);
+      setNewMessage("");
+      scrollToBottom();
+
+      // Cập nhật room's last message
+      const optimisticRoom = {
+        ...selectedRoom,
+        lastMessage: messageText,
+        lastMessageTime: clientTimestamp,
+      };
+
+      setRooms((prev) =>
+        prev
+          .map((room) => (room.id === selectedRoom.id ? optimisticRoom : room))
+          .sort((a, b) => {
+            const timeA = a.lastMessageTime?.getTime() || 0;
+            const timeB = b.lastMessageTime?.getTime() || 0;
+            return timeB - timeA;
+          })
+      );
+
+      // Gửi message lên Firebase
       const messagesRef = collection(db, "messages");
       const docRef = await addDoc(messagesRef, {
-        text: newMessage,
+        text: messageText,
         username: username,
         name: userProfile.name,
         avt: userProfile.avt,
         roomId: selectedRoom.id,
         createdAt: serverTimestamp(),
+        type: "text",
       });
 
-      // Update room's last message in Firebase
+      // Cập nhật room trên Firebase
       const roomRef = doc(db, "rooms", selectedRoom.id);
       await updateDoc(roomRef, {
-        lastMessage: newMessage,
+        lastMessage: messageText,
         lastMessageTime: serverTimestamp(),
       });
-
-      // Update the temporary message with the real one
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === tempId
-            ? {
-                ...msg,
-                id: docRef.id,
-                createdAt: new Date(), // Use server timestamp
-              }
-            : msg
+      // Cập nhật message thành công
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId ? { ...msg, id: docRef.id, pending: false } : msg
         )
       );
+
+      console.log("Cập nhật thành công, pending:", messages);
     } catch (error) {
       console.error("Error sending message:", error);
 
-      // Revert optimistic updates if sending fails
-      setMessages((prevMessages) =>
-        prevMessages.filter((msg) => msg.id !== tempId)
+      // Đánh dấu tin nhắn lỗi thay vì xóa nó
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId ? { ...msg, error: true, pending: false } : msg
+        )
       );
 
-      setRooms((prevRooms) => {
-        const lastMessage = messages[messages.length - 1]?.text || "";
-        const lastMessageTime =
-          messages[messages.length - 1]?.createdAt || null;
-
-        return prevRooms
-          .map((room) =>
-            room.id === selectedRoom.id
-              ? {
-                  ...room,
-                  lastMessage,
-                  lastMessageTime,
-                }
-              : room
-          )
-          .sort((a, b) => {
-            const timeA = a.lastMessageTime ? a.lastMessageTime.getTime() : 0;
-            const timeB = b.lastMessageTime ? b.lastMessageTime.getTime() : 0;
-            return timeB - timeA;
-          });
-      });
+      // Khôi phục lại trạng thái room
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage) {
+        setRooms((prev) =>
+          prev
+            .map((room) =>
+              room.id === selectedRoom.id
+                ? {
+                    ...room,
+                    lastMessage: lastMessage.text,
+                    lastMessageTime: lastMessage.createdAt,
+                  }
+                : room
+            )
+            .sort((a, b) => {
+              const timeA = a.lastMessageTime?.getTime() || 0;
+              const timeB = b.lastMessageTime?.getTime() || 0;
+              return timeB - timeA;
+            })
+        );
+      }
 
       alert("Có lỗi xảy ra khi gửi tin nhắn! Vui lòng thử lại.");
     }
@@ -1110,7 +1123,17 @@ export default function ChatWeb() {
                         onClick={() => window.open(message.imageUrl, "_blank")}
                       />
                     ) : (
-                      <p className="text-sm">{message.text}</p>
+                      <>
+                        <p className="text-sm">{message.text}</p>
+                        {message.pending && (
+                          <span className="text-xs">Đang gửi...</span>
+                        )}
+                        {message.error && (
+                          <span className="text-xs text-red-300">
+                            Lỗi gửi tin nhắn
+                          </span>
+                        )}
+                      </>
                     )}
                     {message.username !== username && (
                       <p className="text-xs text-gray-600">{message.name}</p>
