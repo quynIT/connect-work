@@ -18,6 +18,7 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
   addDoc,
   serverTimestamp,
   onSnapshot,
@@ -26,6 +27,7 @@ import {
   doc,
   limit,
   startAfter,
+  arrayUnion,
 } from "firebase/firestore";
 import {
   getStorage,
@@ -35,6 +37,9 @@ import {
 } from "firebase/storage";
 import { getUserProfile } from "../../services/authService";
 import { AiFillDelete } from "react-icons/ai";
+import VideoCall from "../../components/user/VideoCall/VideoCall";
+import { CallNotification } from "../../components/user/VideoCall/CallNotification";
+import { CallData } from "../../components/user/VideoCall/types";
 interface User {
   id: string;
   username: string;
@@ -77,6 +82,7 @@ interface RoomListProps {
 interface ActiveUsersProps {
   users: User[];
 }
+
 export default function ChatWeb() {
   const [showAddRoomForm, setShowAddRoomForm] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
@@ -101,6 +107,10 @@ export default function ChatWeb() {
   const [hasMore, setHasMore] = useState(true);
   const [lastMessageRef, setLastMessageRef] = useState<any>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isInCall, setIsInCall] = useState(false);
+  const [incomingCallData, setIncomingCallData] = useState<any>(null);
+  const [showIncomingCall, setShowIncomingCall] = useState(false);
+  const [callType, setCallType] = useState<"audio" | "video" | null>(null);
   const [userProfile, setUserProfile] = useState<{
     name: string;
     avt: string;
@@ -256,10 +266,28 @@ export default function ChatWeb() {
             createdAt: change.doc.data().createdAt?.toDate(),
           } as Message;
 
+          // Kiểm tra xem tin nhắn đã tồn tại trong danh sách chưa
           setMessages((prev) => {
-            // Kiểm tra xem tin nhắn đã tồn tại chưa
-            if (!prev.find((msg) => msg.id === newMessage.id)) {
-              return [...prev, newMessage];
+            // Kiểm tra cả id thực và id tạm thời
+            const isDuplicate = prev.some(
+              (msg) =>
+                msg.id === newMessage.id ||
+                (msg.text === newMessage.text &&
+                  msg.username === newMessage.username &&
+                  msg.pending)
+            );
+
+            if (!isDuplicate) {
+              // Thay thế tin nhắn tạm thời (nếu có) bằng tin nhắn thực
+              const filteredMessages = prev.filter(
+                (msg) =>
+                  !(
+                    msg.pending &&
+                    msg.text === newMessage.text &&
+                    msg.username === newMessage.username
+                  )
+              );
+              return [...filteredMessages, newMessage];
             }
             return prev;
           });
@@ -504,8 +532,7 @@ export default function ChatWeb() {
       roomId: selectedRoom.id,
       createdAt: clientTimestamp,
       type: "text",
-      pending: true, // Thêm trạng thái pending
-      error: false, // Thêm trạng thái error
+      pending: true,
     } as Message;
 
     try {
@@ -514,26 +541,9 @@ export default function ChatWeb() {
       setNewMessage("");
       scrollToBottom();
 
-      // Cập nhật room's last message
-      const optimisticRoom = {
-        ...selectedRoom,
-        lastMessage: messageText,
-        lastMessageTime: clientTimestamp,
-      };
-
-      setRooms((prev) =>
-        prev
-          .map((room) => (room.id === selectedRoom.id ? optimisticRoom : room))
-          .sort((a, b) => {
-            const timeA = a.lastMessageTime?.getTime() || 0;
-            const timeB = b.lastMessageTime?.getTime() || 0;
-            return timeB - timeA;
-          })
-      );
-
       // Gửi message lên Firebase
       const messagesRef = collection(db, "messages");
-      const docRef = await addDoc(messagesRef, {
+      await addDoc(messagesRef, {
         text: messageText,
         username: username,
         name: userProfile.name,
@@ -549,46 +559,14 @@ export default function ChatWeb() {
         lastMessage: messageText,
         lastMessageTime: serverTimestamp(),
       });
-      // Cập nhật message thành công
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === tempId ? { ...msg, id: docRef.id, pending: false } : msg
-        )
-      );
-
-      console.log("Cập nhật thành công, pending:", messages);
     } catch (error) {
       console.error("Error sending message:", error);
-
-      // Đánh dấu tin nhắn lỗi thay vì xóa nó
+      // Đánh dấu tin nhắn lỗi
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === tempId ? { ...msg, error: true, pending: false } : msg
         )
       );
-
-      // Khôi phục lại trạng thái room
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage) {
-        setRooms((prev) =>
-          prev
-            .map((room) =>
-              room.id === selectedRoom.id
-                ? {
-                    ...room,
-                    lastMessage: lastMessage.text,
-                    lastMessageTime: lastMessage.createdAt,
-                  }
-                : room
-            )
-            .sort((a, b) => {
-              const timeA = a.lastMessageTime?.getTime() || 0;
-              const timeB = b.lastMessageTime?.getTime() || 0;
-              return timeB - timeA;
-            })
-        );
-      }
-
       alert("Có lỗi xảy ra khi gửi tin nhắn! Vui lòng thử lại.");
     }
   };
@@ -861,6 +839,52 @@ export default function ChatWeb() {
       </div>
     );
   });
+  useEffect(() => {
+    if (!username || !selectedRoom || !selectedRoom.id) return;
+
+    const callsQuery = query(
+      collection(db, "calls"),
+      where("status", "==", "ringing"),
+      where("roomId", "==", selectedRoom.id)
+    );
+
+    const unsubscribe = onSnapshot(callsQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const callData = change.doc.data();
+          if (callData.callerId !== username) {
+            setIncomingCallData({
+              ...callData,
+              callId: change.doc.id,
+            });
+            setShowIncomingCall(true);
+          }
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [username, selectedRoom]);
+  // Add handleStartCall function
+  const handleStartCall = async (type: "audio" | "video") => {
+    if (!selectedRoom?.id || !username) return;
+
+    try {
+      await addDoc(collection(db, "calls"), {
+        roomId: selectedRoom.id,
+        callerId: username,
+        callType: type,
+        status: "ringing",
+        timestamp: serverTimestamp(),
+      });
+
+      setCallType(type);
+      setIsInCall(true);
+    } catch (error) {
+      console.error("Error starting call:", error);
+      alert("Không thể bắt đầu cuộc gọi. Vui lòng thử lại!");
+    }
+  };
   return (
     <div className="flex mt-[100px] h-[85vh] mb-5">
       {/* Left Sidebar - Chat List */}
@@ -1067,8 +1091,14 @@ export default function ChatWeb() {
                     </div>
                   </div>
                 )}
-                <PhoneIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
-                <VideoCameraIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
+                <PhoneIcon
+                  onClick={() => handleStartCall("audio")}
+                  className="h-6 w-6 text-gray-600 cursor-pointer hover:text-blue-500"
+                />
+                <VideoCameraIcon
+                  onClick={() => handleStartCall("video")}
+                  className="h-6 w-6 text-gray-600 cursor-pointer hover:text-blue-500"
+                />
                 <InformationCircleIcon className="h-6 w-6 text-gray-600 cursor-pointer" />
               </div>
             </div>
@@ -1125,9 +1155,7 @@ export default function ChatWeb() {
                     ) : (
                       <>
                         <p className="text-sm">{message.text}</p>
-                        {message.pending && (
-                          <span className="text-xs">Đang gửi...</span>
-                        )}
+
                         {message.error && (
                           <span className="text-xs text-red-300">
                             Lỗi gửi tin nhắn
@@ -1207,7 +1235,45 @@ export default function ChatWeb() {
             Chọn một phòng để bắt đầu chat
           </p>
         )}
+        {isInCall && selectedRoom?.id && username && callType && (
+          <VideoCall
+            roomId={selectedRoom.id}
+            username={username}
+            callType={callType}
+            callDocId={incomingCallData?.callId} // Thêm callDocId cho người nhận cuộc gọi
+            isInitiator={!incomingCallData} // Người nhận không phải initiator
+            onClose={() => {
+              setIsInCall(false);
+              setIncomingCallData(null);
+              setCallType(null);
+            }}
+          />
+        )}
+
+        {showIncomingCall && incomingCallData && (
+          <CallNotification
+            caller={incomingCallData.callerId}
+            callType={incomingCallData.callType}
+            onAccept={() => {
+              setIsInCall(true);
+              setCallType(incomingCallData.callType);
+              setShowIncomingCall(false);
+            }}
+            onDecline={async () => {
+              if (!incomingCallData?.callId) return;
+              try {
+                const callDocRef = doc(db, "calls", incomingCallData.callId);
+                await updateDoc(callDocRef, { status: "declined" });
+                setShowIncomingCall(false);
+                setIncomingCallData(null);
+              } catch (err) {
+                console.error("Error declining call:", err);
+              }
+            }}
+          />
+        )}
       </div>
+      {/* Video Call Modal */}
 
       {/* Right Sidebar - Active Users */}
       <ActiveUsers users={users} />
