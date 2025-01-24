@@ -117,7 +117,7 @@ export default function MgAttendance() {
 
         alert("Form đã được lưu thành công!");
       }
-    } catch (error) {
+    } catch (error: any) {
       // Xử lý lỗi trả về từ server hoặc lỗi khác
       console.error("Error saving attendance form:", error);
       alert(`Lỗi: ${error.message}`); // Hiển thị thông báo lỗi cho người dùng
@@ -286,7 +286,7 @@ export default function MgAttendance() {
       alert("Có lỗi xảy ra khi cập nhật trạng thái.");
     }
   };
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "approved":
         return <CheckCircleIcon className="w-6 h-6 text-green-500" />;
@@ -362,7 +362,7 @@ export default function MgAttendance() {
                 >
                   <td className="px-4 py-3 text-sm text-gray-200">Admin</td>
                   <td className="px-4 py-3 text-sm text-gray-300">
-                    {attendance.date}
+                    {attendance.date.toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-center">{presentCount}</td>
                   <td className="px-4 py-3 text-center">{absentCount}</td>

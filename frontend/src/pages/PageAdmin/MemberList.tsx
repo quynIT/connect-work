@@ -1,10 +1,17 @@
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+interface Member {
+  avt: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  createdAt: string; // Đảm bảo rằng createdAt là một chuỗi, nếu không có thể chuyển thành Date
+}
 export default function MemberList() {
   const navigate = useNavigate();
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState<Member[]>([]);
 
   useEffect(() => {
     // Gọi API để lấy dữ liệu thành viên

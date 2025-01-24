@@ -5,7 +5,6 @@ const ChangePasswordPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [retypePassword, setRetypePassword] = useState("");
   const [error, setError] = useState<string | null>(null); // Biến lưu thông báo lỗi
-  const [iduser, setIduser] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +23,6 @@ const ChangePasswordPage = () => {
 
     try {
       const profile = await getUserProfile();
-      setIduser(profile._id);
       const response = await fetch(
         `http://localhost:3000/user/${profile._id}/change-password`,
         {
@@ -49,7 +47,7 @@ const ChangePasswordPage = () => {
         setNewPassword("");
         setRetypePassword("");
       }
-    } catch (e) {
+    } catch (e: any) {
       setError("An error occurred. Please try again later.");
     }
   };

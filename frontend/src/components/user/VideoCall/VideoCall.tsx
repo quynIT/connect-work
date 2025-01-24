@@ -119,7 +119,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
                   await addDoc(collection(db, "calls", callId, "offers"), {
                     userId: username,
                     targetUserId: participantId,
-                    sdp: offer.toJSON(),
+                    sdp: offer.sdp,
                   });
                 } catch (err) {
                   console.error("Error creating offer:", err);
@@ -157,7 +157,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
               await addDoc(collection(db, "calls", callId, "answers"), {
                 userId: username,
                 targetUserId: offerData.userId,
-                sdp: answer.toJSON(),
+                sdp: answer.sdp,
               });
             } catch (err) {
               console.error("Error handling offer:", err);

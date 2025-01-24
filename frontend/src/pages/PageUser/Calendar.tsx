@@ -46,9 +46,9 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       setSalary(data.total_salary);
     } catch (error) {
       console.error("Error fetching salary:", error);
+      console.log(setError);
     }
   };
-
   const generateSalary = async () => {
     setIsLoading(true);
     try {

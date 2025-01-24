@@ -513,7 +513,7 @@ const KanbanBoard: React.FC = () => {
                   Project Description
                 </label>
                 <Editor
-                  apiKey="xpd3ffmxsuyypgz6ksv812zf7wezg9klfrs5aettq52kn72m"
+                  apiKey="2x0ufb2p4n449q9kvsa68unyrmh0vdhfkp2kxi2ccnmxlriv"
                   init={{
                     plugins: [
                       // Core editing features
@@ -568,7 +568,9 @@ const KanbanBoard: React.FC = () => {
                       { value: "First.Name", title: "First Name" },
                       { value: "Email", title: "Email" },
                     ],
-                    ai_request: (request, respondWith) =>
+                    ai_request: (respondWith: {
+                      string: (callback: () => Promise<string>) => void;
+                    }) =>
                       respondWith.string(() =>
                         Promise.reject("See docs to implement AI Assistant")
                       ),

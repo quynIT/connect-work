@@ -87,7 +87,7 @@ const MonthlyPayroll: React.FC = () => {
         }
       );
       const data = await response.json();
-
+      console.log(data);
       // Sau khi tính lương, bạn gọi API để lấy thông tin lương đã được tính
       const payrollResponse = await fetch(
         `http://localhost:3000/payrolls/by-month?user_id=${id}&month=${month}`

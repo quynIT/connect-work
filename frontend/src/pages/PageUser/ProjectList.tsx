@@ -42,12 +42,20 @@ const ProjectList: React.FC = () => {
   type FormMode = "create" | "update" | "view";
   const [formMode, setFormMode] = useState<FormMode>("create"); // Mặc định là "create"
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  const [newProject, setNewProject] = useState({
+  const [newProject, setNewProject] = useState<{
+    name: string;
+    description: string;
+    projectCategory: string;
+    memberSearch: string;
+    member: string[]; // Định nghĩa rõ ràng kiểu là mảng chuỗi
+    url: string;
+    createdBy: string;
+  }>({
     name: "",
     description: "",
     projectCategory: "",
-    memberSearch: "", // Thêm thuộc tính này
-    member: [], // Sử dụng mảng để lưu ID của các thành viên đã chọn
+    memberSearch: "",
+    member: [], // Mảng rỗng có kiểu rõ ràng là string[]
     url: "",
     createdBy: "",
   });
@@ -131,7 +139,7 @@ const ProjectList: React.FC = () => {
       fetchUserProfile();
     }
   }, [showModal, formMode]);
-  const handleNavigateToTask = (projectId) => {
+  const handleNavigateToTask = (projectId: string) => {
     // Chuyển hướng đến trang task với projectId
     navigate(`/task-board/${projectId}`);
   };
@@ -199,7 +207,7 @@ const ProjectList: React.FC = () => {
         `http://localhost:3000/projects/detail/${projectId}`
       );
       const project = await response.json();
-      setSelectedUsers(project.user.map((u) => u._id));
+      setSelectedUsers(project.user.map((u: User) => u._id));
       setNewProject({
         name: project.name,
         description: project.description,
@@ -575,7 +583,7 @@ const ProjectList: React.FC = () => {
                         Project Description
                       </label>
                       <Editor
-                        apiKey="xpd3ffmxsuyypgz6ksv812zf7wezg9klfrs5aettq52kn72m"
+                        apiKey="2x0ufb2p4n449q9kvsa68unyrmh0vdhfkp2kxi2ccnmxlriv"
                         init={{
                           plugins: [
                             // Core editing features
@@ -630,7 +638,9 @@ const ProjectList: React.FC = () => {
                             { value: "First.Name", title: "First Name" },
                             { value: "Email", title: "Email" },
                           ],
-                          ai_request: (request, respondWith) =>
+                          ai_request: (respondWith: {
+                            string: (callback: () => Promise<string>) => void;
+                          }) =>
                             respondWith.string(() =>
                               Promise.reject(
                                 "See docs to implement AI Assistant"
@@ -707,7 +717,7 @@ const ProjectList: React.FC = () => {
               <div className="mt-6">
                 <strong className="text-gray-700">Members:</strong>
                 <div className="flex space-x-4 mt-2">
-                  {viewingProject.user.map((user) => (
+                  {viewingProject.user.map((user: User) => (
                     <div
                       key={user._id}
                       className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg shadow-sm hover:bg-gray-200 transition-all"

@@ -1,4 +1,3 @@
-import React from "react";
 interface Notification {
   id: number;
   title: string;

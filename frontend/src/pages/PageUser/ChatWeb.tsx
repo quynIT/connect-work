@@ -18,7 +18,6 @@ import {
   query,
   where,
   getDocs,
-  getDoc,
   addDoc,
   serverTimestamp,
   onSnapshot,
@@ -27,7 +26,6 @@ import {
   doc,
   limit,
   startAfter,
-  arrayUnion,
 } from "firebase/firestore";
 import {
   getStorage,
@@ -39,7 +37,6 @@ import { getUserProfile } from "../../services/authService";
 import { AiFillDelete } from "react-icons/ai";
 import VideoCall from "../../components/user/VideoCall/VideoCall";
 import { CallNotification } from "../../components/user/VideoCall/CallNotification";
-import { CallData } from "../../components/user/VideoCall/types";
 interface User {
   id: string;
   username: string;
@@ -131,10 +128,16 @@ export default function ChatWeb() {
 
         // Truy vấn lấy tất cả người dùng từ Firestore
         const profileSnapshot = await getDocs(usersRef);
-        const userList = profileSnapshot.docs.map((doc) => ({
-          username: doc.id,
-          ...doc.data(),
+        const userList: User[] = profileSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          username: doc.data().username,
+          name: doc.data().name,
+          avt: doc.data().avt,
+          lastMessage: doc.data().lastMessage, // Nếu có
+          active: doc.data().active || false,
+          unread: doc.data().unread || 0,
         }));
+
         setUsers(userList);
 
         if (!snapshot.empty) {
@@ -227,7 +230,7 @@ export default function ChatWeb() {
 
     const loadMessages = async () => {
       const messagesRef = collection(db, "messages");
-      let q = query(
+      const q = query(
         messagesRef,
         where("roomId", "==", selectedRoom.id),
         orderBy("createdAt", "desc"),
@@ -424,7 +427,6 @@ export default function ChatWeb() {
         .map((doc) => {
           const data = doc.data() as User;
           return {
-            username: doc.id, // Sử dụng doc.id làm username nếu đây là giá trị chính.
             ...data,
           };
         })
@@ -601,7 +603,6 @@ export default function ChatWeb() {
         .map((doc) => {
           const data = doc.data() as User;
           return {
-            username: doc.id, // Sử dụng doc.id làm username nếu đây là giá trị chính.
             ...data,
           };
         })
@@ -637,7 +638,8 @@ export default function ChatWeb() {
 
       // Cập nhật UI
       setSelectedRoom(
-        (prevRoom) => prevRoom && { ...prevRoom, members: updatedMembers }
+        (prevRoom: Room | null) =>
+          prevRoom && { ...prevRoom, members: updatedMembers }
       );
       setSearchUser(""); // Reset ô tìm kiếm user
       setUserResults([]); // Xóa kết quả tìm kiếm user
@@ -780,7 +782,7 @@ export default function ChatWeb() {
     }));
   }, []);
   const RoomList: React.FC<RoomListProps> = React.memo(
-    ({ rooms, selectedRoom, setSelectedRoom }) => {
+    ({ rooms, selectedRoom }) => {
       return rooms.map((room) => (
         <li
           key={room.id}
@@ -1120,7 +1122,7 @@ export default function ChatWeb() {
                 </div>
               )}
 
-              {formattedMessages.map((message, index) => (
+              {formattedMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${
