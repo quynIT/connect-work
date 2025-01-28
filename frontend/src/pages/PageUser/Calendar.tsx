@@ -3,6 +3,7 @@ import { XMarkIcon, CheckIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tooltip } from "react-tooltip";
+import { useNotification } from "../../components/user/Notification";
 
 type AttendanceRecord = {
   _id: string;
@@ -36,6 +37,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const userId = localStorage.getItem("currentUserId");
   const [error, setError] = useState<string | null>(null);
+  const { showNotification } = useNotification();
   const fetchSalary = async () => {
     try {
       // Gọi API để lấy lương
@@ -61,8 +63,10 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       );
       // Sau khi tính lương xong, fetch lại số lương mới
       await fetchSalary();
+      showNotification("success", "Tính lương thành công!");
     } catch (error) {
       console.error("Error generating salary:", error);
+      showNotification("error", "Có lỗi xảy ra khi tính lương!");
     } finally {
       setIsLoading(false);
     }

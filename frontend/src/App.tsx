@@ -5,44 +5,48 @@ import "./App.css";
 import LayoutAdmin from "./layouts/admin/LayoutAdmin";
 import { AuthProvider } from "./auth/AuthContext";
 import LoginUser from "./pages/PageUser/LoginUser";
+import { NotificationProvider } from "./components/user/Notification";
+
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Route for admin */}
-          <Route path="/admin" element={<LayoutAdmin />}>
-            {adminRoutes.map(
-              (route: { path: string; page: React.ComponentType }) => {
-                const Page = route.page;
-                return (
-                  <Route
-                    key={route.path}
-                    path={route.path}
-                    element={<Page />}
-                  />
-                );
-              }
-            )}
-          </Route>
-          <Route path="/login" element={<LoginUser />} />
-          {/* Route for client */}
-          <Route path="/" element={<LayoutUser />}>
-            {routes.map(
-              (route: { path: string; page: React.ComponentType }) => {
-                const Page = route.page;
-                return (
-                  <Route
-                    key={route.path}
-                    path={route.path}
-                    element={<Page />}
-                  />
-                );
-              }
-            )}
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <NotificationProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Route for admin */}
+            <Route path="/admin" element={<LayoutAdmin />}>
+              {adminRoutes.map(
+                (route: { path: string; page: React.ComponentType }) => {
+                  const Page = route.page;
+                  return (
+                    <Route
+                      key={route.path}
+                      path={route.path}
+                      element={<Page />}
+                    />
+                  );
+                }
+              )}
+            </Route>
+            <Route path="/login" element={<LoginUser />} />
+            {/* Route for client */}
+            <Route path="/" element={<LayoutUser />}>
+              {routes.map(
+                (route: { path: string; page: React.ComponentType }) => {
+                  const Page = route.page;
+                  return (
+                    <Route
+                      key={route.path}
+                      path={route.path}
+                      element={<Page />}
+                    />
+                  );
+                }
+              )}
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </NotificationProvider>
     </AuthProvider>
   );
 }
