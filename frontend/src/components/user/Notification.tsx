@@ -58,7 +58,7 @@ const Notification: React.FC<NotificationProps> = ({
     <div
       className={`
         ${isLeaving ? "animate-slide-out" : "animate-slide-in"}
-        fixed top-4 right-4 w-80 max-w-[calc(100%-2rem)]
+        fixed top-4 right-4 w-100 max-w-[calc(100%-2rem)]
         ${backgrounds[type]} 
         rounded-lg shadow-lg
       `}
