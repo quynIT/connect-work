@@ -125,6 +125,7 @@ export default function Calendar() {
     { month: number; year: number; days: AttendanceStatus[] }[]
   >([]);
   const [showForm, setShowForm] = useState(false);
+  const { showNotification } = useNotification();
   const [formData, setFormData] = useState({
     date: "",
     reason: "",
@@ -227,11 +228,10 @@ export default function Calendar() {
         }
       }
       setMultiMonthData(monthsToShow);
-
-      alert("Đã gửi đơn xin nghỉ phép thành công!");
+      showNotification("success", "Đơn đã gửi thành công!");
     } catch (error) {
-      console.error("Error submitting leave request:", error);
-      alert("Có lỗi xảy ra khi gửi đơn xin nghỉ phép!");
+      showNotification("error", "Đơn gửi thất bại!");
+      console.log("error", error);
     } finally {
       setIsSubmitting(false);
     }

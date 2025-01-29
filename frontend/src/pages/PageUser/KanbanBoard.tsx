@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FaPlus, FaEllipsisV } from "react-icons/fa";
+import { FaPlus, FaEllipsisV, FaClock } from "react-icons/fa";
 import { Editor } from "@tinymce/tinymce-react";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import TaskDetail from "../../components/user/TaskDetail";
@@ -334,66 +334,111 @@ const KanbanBoard: React.FC = () => {
   };
   // Hàm render các task theo cột
   const renderTasks = (status: keyof typeof categorizedTasks) =>
-    categorizedTasks[status].map((task) => (
-      <div key={task._id} className="bg-gray-50 rounded-xl p-4 mb-4 shadow-sm">
-        <p className="text-gray-800 font-medium">{task.name}</p>
-        <div className="flex justify-between items-center mt-4">
-          <div className="flex space-x-2">
-            {task.user.map((user) => (
-              <img
-                key={user._id}
-                src={user.avt}
-                alt={user.name}
-                className="w-8 h-8 rounded-full"
-                title={user.name}
-              />
-            ))}
+    categorizedTasks[status].map((task) => {
+      const timeStatus = getTimeRemaining(task.dueDate);
+
+      return (
+        <div
+          key={task._id}
+          className="bg-white rounded-xl p-4 mb-4 shadow-md hover:shadow-lg transition-shadow duration-200"
+        >
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="text-gray-800 font-medium text-lg">{task.name}</h3>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleOpenTaskDetail(task._id)}
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200"
+              >
+                <FaEye className="text-blue-500 w-4 h-4" />
+              </button>
+              <button
+                onClick={() => openEditModal(task)}
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200"
+              >
+                <FaEdit className="text-yellow-500 w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleDeleteTask(task._id)}
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200"
+              >
+                <FaTrash className="text-red-500 w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => handleOpenTaskDetail(task._id)} // Mở chi tiết task
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <FaEye className="text-blue-500" />
-            </button>
-            <button
-              onClick={() => openEditModal(task)}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <FaEdit className="text-yellow-500" />
-            </button>
-            <button
-              onClick={() => handleDeleteTask(task._id)} // Xóa task
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <FaTrash className="text-red-500" />
-            </button>
+
+          {/* Description preview */}
+          <div
+            className="text-gray-600 text-sm mb-4 line-clamp-2"
+            dangerouslySetInnerHTML={{
+              __html: task.description.substring(0, 100) + "...",
+            }}
+          ></div>
+
+          <div className="flex justify-between items-center">
+            <div className="flex -space-x-2">
+              {task.user.map((user) => (
+                <img
+                  key={user._id}
+                  src={user.avt}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full border-2 border-white"
+                  title={user.name}
+                />
+              ))}
+            </div>
+
+            {timeStatus && (
+              <div
+                className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                  timeStatus.isOverdue
+                    ? "bg-red-100 text-red-600"
+                    : timeStatus.isUrgent
+                    ? "bg-orange-100 text-orange-600"
+                    : "bg-blue-100 text-blue-600"
+                }`}
+              >
+                <FaClock className="mr-1 w-3 h-3" />
+                <span>{timeStatus.text}</span>
+              </div>
+            )}
+            {selectedTaskId && (
+              <div className="task-detail-modal">
+                <TaskDetail
+                  taskId={selectedTaskId}
+                  onClose={handleCloseTaskDetail}
+                />
+              </div>
+            )}
           </div>
         </div>
-        {selectedTaskId && (
-          <div className="task-detail-modal">
-            <TaskDetail
-              taskId={selectedTaskId}
-              onClose={handleCloseTaskDetail}
-            />
-          </div>
-        )}
-      </div>
-    ));
+      );
+    });
+  const getTimeRemaining = (dueDate: string | null) => {
+    if (!dueDate) return null;
 
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diff = due.getTime() - now.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (diff < 0) {
+      return { isOverdue: true, text: "Trễ deadline" };
+    } else if (days === 0) {
+      return { isUrgent: true, text: `${hours} giờ còn lại` };
+    } else {
+      return { isNormal: true, text: `${days} ngày còn lại` };
+    }
+  };
   return (
-    <div
-      className="mt-20 p-6 min-h-screen"
-      style={{ backgroundColor: "#f7fafd" }}
-    >
+    <div className="mt-20 p-6 min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-lexend text-gray-800">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">
           Board: <span className="text-green-600">Task</span>
         </h1>
         <button
-          className="flex items-center px-4 py-2 text-gray-800 font-lexend rounded-xl hover:bg-green-600"
-          style={{ backgroundColor: "#52e052" }}
+          className="flex items-center px-6 py-2.5 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors duration-200"
           onClick={openModal}
         >
           <FaPlus className="mr-2" />
@@ -602,18 +647,20 @@ const KanbanBoard: React.FC = () => {
       )}
 
       {/* Search and Filters */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search tasks..."
-            className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search tasks..."
+              className="w-96 px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
           <button
             onClick={handleSearch}
-            className="flex items-center px-3 py-2 border border-gray-300 rounded-xl text-gray-600 hover:text-gray-800"
+            className="flex items-center px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50"
           >
             <FaEllipsisV className="mr-2" />
             Quick Filters
@@ -623,69 +670,59 @@ const KanbanBoard: React.FC = () => {
 
       {/* Columns */}
       {loading ? (
-        <div>Loading tasks...</div>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
       ) : (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-6">
           {/* Column 1 */}
-          <div
-            className="rounded-xl shadow-md p-4"
-            style={{ backgroundColor: "#ecf2f9" }}
-          >
+          <div className="bg-gray-100 rounded-xl shadow-sm p-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-lexend" style={{ color: "#6366f1" }}>
-                ● To Do ({categorizedTasks["To Do"].length})
-              </h2>
-              <button className="text-gray-500 hover:text-gray-800">
-                <FaEllipsisV />
-              </button>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  To Do ({categorizedTasks["To Do"].length})
+                </h2>
+              </div>
             </div>
             {renderTasks("To Do")}
           </div>
 
           {/* Column 2 */}
-          <div
-            className="rounded-xl shadow-md p-4"
-            style={{ backgroundColor: "#ecf2f9" }}
-          >
+          <div className="bg-gray-100 rounded-xl shadow-sm p-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-lexend" style={{ color: "#f59e0b" }}>
-                ● In Progress ({categorizedTasks["In Progress"].length})
-              </h2>
-              <button className="text-gray-500 hover:text-gray-800">
-                <FaEllipsisV />
-              </button>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  In Progress ({categorizedTasks["In Progress"].length})
+                </h2>
+              </div>
             </div>
             {renderTasks("In Progress")}
           </div>
 
           {/* Column 3 */}
-          <div
-            className="rounded-xl shadow-md p-4"
-            style={{ backgroundColor: "#ecf2f9" }}
-          >
+          <div className="bg-gray-100 rounded-xl shadow-sm p-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-lexend" style={{ color: "#f43f5e" }}>
-                ● In Review ({categorizedTasks["In Review"].length})
-              </h2>
-              <button className="text-gray-500 hover:text-gray-800">
-                <FaEllipsisV />
-              </button>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  In Review ({categorizedTasks["In Review"].length})
+                </h2>
+              </div>
             </div>
             {renderTasks("In Review")}
           </div>
 
           {/* Column 4 */}
-          <div
-            className="rounded-xl shadow-md p-4"
-            style={{ backgroundColor: "#ecf2f9" }}
-          >
+          <div className="bg-gray-100 rounded-xl shadow-sm p-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-lexend" style={{ color: "#10b981" }}>
-                ● Done ({categorizedTasks["Done"].length})
-              </h2>
-              <button className="text-gray-500 hover:text-gray-800">
-                <FaEllipsisV />
-              </button>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Done ({categorizedTasks["Done"].length})
+                </h2>
+              </div>
             </div>
             {renderTasks("Done")}
           </div>

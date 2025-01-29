@@ -136,86 +136,92 @@ const AccountInfo: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 border rounded-lg shadow-md mt-[150px] mb-20">
-      <h2 className="text-2xl font-bold mb-4 text-center">
+    <div className="max-w-3xl mx-auto p-8 bg-white border rounded-xl shadow-lg mt-[150px] mb-20 dark:bg-gray-800 dark:border-gray-700">
+      <h2 className="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-white">
         Thông tin tài khoản
       </h2>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Username */}
-        <div className="flex items-center">
-          <UserIcon className="w-9 h-9 text-gray-600 mr-2" />
-          <span className="font-medium">{userInfo.username}</span>
+        <div className="flex items-center bg-gray-50 p-3 rounded-lg dark:bg-gray-700">
+          <UserIcon className="w-8 h-8 text-blue-500 mr-3" />
+          <span className="font-semibold text-lg text-gray-700 dark:text-gray-200">
+            {userInfo.username}
+          </span>
         </div>
 
         {/* Name */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <UserIcon
-            className="w-10 h-10 text-gray-600 mr-2"
-            style={{ color: "#1da1f2" }}
-          />
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <UserIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="text"
             name="name"
             value={userInfo.name}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
-        {errors.name && <p className="text-red-500">{errors.name}</p>}
+        {errors.name && (
+          <p className="text-red-500 text-sm ml-14">{errors.name}</p>
+        )}
 
         {/* Email */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <AtSymbolIcon
-            className="w-10 h-10 text-gray-600 mr-2"
-            style={{ color: "#1da1f2" }}
-          />
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <AtSymbolIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="email"
             name="email"
             value={userInfo.email}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
-        {errors.email && <p className="text-red-500">{errors.email}</p>}
+        {errors.email && (
+          <p className="text-red-500 text-sm ml-14">{errors.email}</p>
+        )}
+
         {/* Phone */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <PhoneIcon
-            className="w-10 h-10 text-gray-600 mr-2 p-1 bg-gray-100 rounded"
-            style={{ color: "#1da1f2" }}
-          />
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <PhoneIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="tel"
             name="phone"
             value={userInfo.phone}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
-        {errors.phone && <p className="text-red-500">{errors.phone}</p>}
+        {errors.phone && (
+          <p className="text-red-500 text-sm ml-14">{errors.phone}</p>
+        )}
+
         {/* Gender */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <UserCircleIcon
-            className="w-10 h-10 text-gray-600 mr-2"
-            style={{ color: "#1da1f2" }}
-          />
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <UserCircleIcon className="w-10 h-10 text-blue-500 mx-3" />
           <select
             name="gender"
             value={userInfo.gender}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           >
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
@@ -223,111 +229,116 @@ const AccountInfo: React.FC = () => {
           </select>
         </div>
 
-        {/* bithdate */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <CalendarIcon
-            className="w-10 h-10 text-gray-600 mr-2"
-            style={{ color: "#1da1f2" }}
-          />
+        {/* Birthdate */}
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CalendarIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="date"
             name="bithdate"
             value={userInfo.bithdate}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
+
         {/* Address */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <HomeIcon
-            className="w-10 h-10 text-gray-600 mr-2 p-1 bg-gray-100 rounded"
-            style={{ color: "#1da1f2" }}
-          />
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <HomeIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="text"
             name="address"
             value={userInfo.address}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
+
         {/* Position */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <BriefcaseIcon
-            className="w-10 h-10 text-gray-600 mr-2"
-            style={{ color: "#1da1f2" }}
-          />
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <BriefcaseIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="text"
             name="position"
             value={userInfo.position}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
+
         {/* Salary */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <CurrencyDollarIcon
-            className="w-10 h-10 text-gray-600 mr-2 p-1 bg-gray-100 rounded"
-            style={{ color: "#1da1f2" }}
-          />
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CurrencyDollarIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="text"
             name="salary"
             value={userInfo.salary}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
-        {errors.salary && <p className="text-red-500">{errors.salary}</p>}
-        {/* Bank Account (STK) */}
-        <div className="flex items-center border border-gray-300 rounded-md shadow-sm">
-          <BanknotesIcon
-            className="w-10 h-10 text-gray-600 mr-2 p-1 bg-gray-100 rounded"
-            style={{ color: "#1da1f2" }}
-          />
+        {errors.salary && (
+          <p className="text-red-500 text-sm ml-14">{errors.salary}</p>
+        )}
+
+        {/* Bank Account */}
+        <div className="flex items-center border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <BanknotesIcon className="w-10 h-10 text-blue-500 mx-3" />
           <input
             type="text"
             name="stk"
             value={userInfo.stk}
             onChange={handleChange}
             disabled={!isEditing}
-            className={`mt-1 block w-full h-10 border-0 rounded-r-md focus:ring focus:ring-opacity-50 ${
-              isEditing ? "border-blue-500" : "bg-gray-100"
-            }`}
+            className={`block w-full py-3 px-4 rounded-r-lg transition-colors duration-200 ${
+              isEditing
+                ? "bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                : "bg-gray-50 dark:bg-gray-700"
+            } border-0 focus:ring-2 text-gray-700 dark:text-gray-200`}
           />
         </div>
-        {errors.stk && <p className="text-red-500">{errors.stk}</p>}
+        {errors.stk && (
+          <p className="text-red-500 text-sm ml-14">{errors.stk}</p>
+        )}
       </div>
 
       {/* Button */}
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center mt-8">
         <button
           onClick={isEditing ? handleSave : handleEditToggle}
-          className={`flex items-center px-6 py-2 ${
-            isEditing ? "bg-green-600" : "bg-blue-600"
-          } text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring focus:ring-blue-300`}
+          className={`flex items-center px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-200 ${
+            isEditing
+              ? "bg-green-500 hover:bg-green-600 focus:ring-green-300"
+              : "bg-blue-500 hover:bg-blue-600 focus:ring-blue-300"
+          } text-white shadow-md hover:shadow-lg focus:outline-none focus:ring-4`}
         >
           {isEditing ? (
             <>
-              <CheckIcon className="w-5 h-5 mr-1" />
+              <CheckIcon className="w-6 h-6 mr-2" />
               Lưu
             </>
           ) : (
             <>
-              <PencilIcon className="w-5 h-5 mr-1" />
+              <PencilIcon className="w-6 h-6 mr-2" />
               Chỉnh sửa
             </>
           )}

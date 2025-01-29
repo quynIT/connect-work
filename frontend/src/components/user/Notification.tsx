@@ -43,9 +43,9 @@ const Notification: React.FC<NotificationProps> = ({
   }, [duration, id, onClose]);
 
   const icons = {
-    error: <AlertCircle className="w-5 h-5 text-red-500" />,
-    warning: <AlertTriangle className="w-5 h-5 text-yellow-500" />,
-    success: <CheckCircle className="w-5 h-5 text-green-500" />,
+    error: <AlertCircle className="w-8 h-8 text-red-500" />,
+    warning: <AlertTriangle className="w-8 h-8 text-yellow-500" />,
+    success: <CheckCircle className="w-8 h-8 text-green-500" />,
   };
 
   const backgrounds = {
@@ -58,14 +58,14 @@ const Notification: React.FC<NotificationProps> = ({
     <div
       className={`
         ${isLeaving ? "animate-slide-out" : "animate-slide-in"}
-        fixed top-4 right-4 w-100 max-w-[calc(100%-2rem)]
+        fixed top-4 right-4 w-96 p-2 max-w-[calc(100%-2rem)]
         ${backgrounds[type]} 
         rounded-lg shadow-lg
       `}
     >
-      <div className="flex p-4 items-center gap-3">
+      <div className="flex p-4 items-center gap-4">
         {icons[type]}
-        <p className="flex-1 text-sm text-gray-900 dark:text-gray-100">
+        <p className="flex-1 text-lg text-gray-900 dark:text-gray-100">
           {message}
         </p>
         <button
@@ -75,7 +75,7 @@ const Notification: React.FC<NotificationProps> = ({
           }}
           className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
-          <X className="w-5 h-5" />
+          <X className="w-8 h-8" />
         </button>
       </div>
     </div>
@@ -108,7 +108,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <NotificationContext.Provider value={{ showNotification }}>
       {children}
-      <div className="fixed top-0 right-0 z-50 p-4 space-y-4">
+      <div className="fixed top-0 right-0 z-50 p-8 space-y-4 font-bold">
         {notifications.map((notification) => (
           <Notification
             key={notification.id}
