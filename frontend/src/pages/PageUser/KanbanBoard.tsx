@@ -621,6 +621,7 @@ const KanbanBoard: React.FC = () => {
                       ),
                   }}
                   onEditorChange={handleEditorChange}
+                  value={newTask.description || ""}
                 />
               </div>
 
