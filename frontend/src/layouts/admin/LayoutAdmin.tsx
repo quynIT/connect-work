@@ -19,6 +19,7 @@ type Link =
   | "Attendance Management"
   | "Salary Management"
   | "Task Management"
+  | "Project Management"
   | "Social Welfare Management";
 
 export default function LayoutAdmin() {
@@ -105,6 +106,14 @@ export default function LayoutAdmin() {
           >
             <BriefcaseIcon className="w-6 h-6" />
             {isSidebarOpen && <span className="ml-2">Task Management</span>}
+          </Link>
+          <Link
+            to="/admin/mg-project"
+            className={linkClasses("Project Management")}
+            onClick={() => setActiveLink("Project Management")}
+          >
+            <BriefcaseIcon className="w-6 h-6" />
+            {isSidebarOpen && <span className="ml-2">Project Management</span>}
           </Link>
           <Link
             to="/admin/social-welfare-management"

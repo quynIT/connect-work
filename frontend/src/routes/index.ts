@@ -20,6 +20,7 @@ import ViewAttendance from "../components/admin/ViewAttendance";
 import EditAttendance from "../components/admin/EditAttendance";
 import LeaveRequestList from "../pages/PageUser/LeaveRequestList";
 import MonthlyPayroll from "../components/admin/MonthlyPayroll";
+import MgProject from "../pages/PageAdmin/MgProject";
 export const routes = [
   {
     path: "/",
@@ -110,5 +111,9 @@ export const adminRoutes = [
   {
     path: "/admin/monthly-salary/:id",
     page: MonthlyPayroll,
+  },
+  {
+    path: "/admin/mg-project",
+    page: MgProject,
   },
 ];
