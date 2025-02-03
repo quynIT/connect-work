@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FaPlus, FaEllipsisV, FaClock } from "react-icons/fa";
+import { FaPlus, FaClock, FaFilter } from "react-icons/fa";
 import { Editor } from "@tinymce/tinymce-react";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import TaskDetail from "../../components/user/TaskDetail";
@@ -37,13 +37,17 @@ const KanbanBoard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]); // Lưu trữ danh sách task
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState(""); // Lưu giá trị tìm kiếm
-  const [searchResults, setSearchResults] = useState<Task[] | null>(null); // Kết quả tìm kiếm
   const [loading, setLoading] = useState(true); // Hiển thị trạng thái loading
   const [isModalOpen, setIsModalOpen] = useState(false); // Trạng thái modal
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [filterMyTasks, setFilterMyTasks] = useState(false);
+  const [filterDeadline, setFilterDeadline] = useState<
+    "all" | "urgent" | "overdue"
+  >("all");
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [newTask, setNewTask] = useState<TaskForm>({
     name: "",
     description: "",
@@ -97,38 +101,26 @@ const KanbanBoard: React.FC = () => {
     fetchUsers();
   }, [projectId]);
 
-  // Phân loại task theo status
-  const categorizedTasks = {
-    "To Do": (searchResults || tasks).filter((task) => task.status === "To Do"),
-    "In Progress": (searchResults || tasks).filter(
-      (task) => task.status === "In Progress"
-    ),
-    "In Review": (searchResults || tasks).filter(
-      (task) => task.status === "In Review"
-    ),
-    Done: (searchResults || tasks).filter((task) => task.status === "Done"),
-  };
-
   // Hàm xử lý tìm kiếm
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) {
-      setSearchResults(null); // Nếu ô tìm kiếm trống, hiển thị lại tất cả tasks
-      return;
-    }
+  // const handleSearch = async () => {
+  //   if (!searchTerm.trim()) {
+  //     setSearchResults(null); // Nếu ô tìm kiếm trống, hiển thị lại tất cả tasks
+  //     return;
+  //   }
 
-    try {
-      setLoading(true); // Bật trạng thái loading
-      const response = await fetch(
-        `http://localhost:3000/tasks/search?name=${searchTerm}`
-      );
-      const data = await response.json();
-      setSearchResults(data); // Cập nhật kết quả tìm kiếm vào state
-    } catch (error) {
-      console.error("Lỗi khi tìm kiếm task:", error);
-    } finally {
-      setLoading(false); // Tắt trạng thái loading
-    }
-  };
+  //   try {
+  //     setLoading(true); // Bật trạng thái loading
+  //     const response = await fetch(
+  //       `http://localhost:3000/tasks/search?name=${searchTerm}`
+  //     );
+  //     const data = await response.json();
+  //     setSearchResults(data); // Cập nhật kết quả tìm kiếm vào state
+  //   } catch (error) {
+  //     console.error("Lỗi khi tìm kiếm task:", error);
+  //   } finally {
+  //     setLoading(false); // Tắt trạng thái loading
+  //   }
+  // };
   const handleEditorChange = (content: string) => {
     setNewTask((prev) => ({
       ...prev,
@@ -430,6 +422,98 @@ const KanbanBoard: React.FC = () => {
       return { isNormal: true, text: `${days} ngày còn lại` };
     }
   };
+  // Hàm kiểm tra task có phải của user hiện tại không
+  const isMyTask = (task: Task) => {
+    const currentUserId = localStorage.getItem("currentUserId");
+    return task.user.some((user) => user._id === currentUserId);
+  };
+
+  // Hàm kiểm tra trạng thái deadline của task
+  const checkDeadlineStatus = (dueDate: string | null) => {
+    if (!dueDate) return { isUrgent: false, isOverdue: false };
+
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diff = due.getTime() - now.getTime();
+    const daysRemaining = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    return {
+      isUrgent: daysRemaining >= 0 && daysRemaining <= 2, // Gần đến hạn (còn 2 ngày hoặc ít hơn)
+      isOverdue: daysRemaining < 0, // Đã quá hạn
+    };
+  };
+  const filterTasks = (tasks: Task[]) => {
+    let filteredTasks = [...tasks];
+
+    // Lọc theo search term (giữ nguyên logic search cũ)
+    if (searchTerm.trim()) {
+      filteredTasks = filteredTasks.filter((task) =>
+        task.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Lọc theo user
+    if (filterMyTasks) {
+      filteredTasks = filteredTasks.filter(isMyTask);
+    }
+
+    // Lọc theo deadline
+    if (filterDeadline !== "all") {
+      filteredTasks = filteredTasks.filter((task) => {
+        const deadlineStatus = checkDeadlineStatus(task.dueDate);
+        if (filterDeadline === "urgent") {
+          return deadlineStatus.isUrgent && !deadlineStatus.isOverdue;
+        } else if (filterDeadline === "overdue") {
+          return deadlineStatus.isOverdue;
+        }
+        return true;
+      });
+    }
+
+    return filteredTasks;
+  };
+  // Phân loại task theo status
+  const categorizedTasks = {
+    "To Do": filterTasks(tasks).filter((task) => task.status === "To Do"),
+    "In Progress": filterTasks(tasks).filter(
+      (task) => task.status === "In Progress"
+    ),
+    "In Review": filterTasks(tasks).filter(
+      (task) => task.status === "In Review"
+    ),
+    Done: filterTasks(tasks).filter((task) => task.status === "Done"),
+  };
+  // Component Filter Menu
+  const FilterMenu = () => (
+    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl z-50 p-4">
+      <div className="mb-4">
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={filterMyTasks}
+            onChange={(e) => setFilterMyTasks(e.target.checked)}
+            className="form-checkbox h-4 w-4 text-green-600"
+          />
+          <span>My Tasks Only</span>
+        </label>
+      </div>
+
+      <div className="mb-4">
+        <label className="block mb-2">Deadline Filter:</label>
+        <select
+          value={filterDeadline}
+          onChange={(e) =>
+            setFilterDeadline(e.target.value as "all" | "urgent" | "overdue")
+          }
+          className="w-full p-2 border rounded"
+        >
+          <option value="all">All Tasks</option>
+          <option value="urgent">Urgent (≤ 2 days)</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+    </div>
+  );
   return (
     <div className="mt-20 p-6 min-h-screen bg-gray-50">
       {/* Header */}
@@ -659,13 +743,19 @@ const KanbanBoard: React.FC = () => {
               className="w-96 px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-          <button
-            onClick={handleSearch}
-            className="flex items-center px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50"
-          >
-            <FaEllipsisV className="mr-2" />
-            Quick Filters
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilterMenu(!showFilterMenu)}
+              className="flex items-center px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50"
+            >
+              <FaFilter className="mr-2" />
+              Filters
+              {(filterMyTasks || filterDeadline !== "all") && (
+                <span className="ml-2 w-2 h-2 bg-green-500 rounded-full"></span>
+              )}
+            </button>
+            {showFilterMenu && <FilterMenu />}
+          </div>
         </div>
       </div>
 

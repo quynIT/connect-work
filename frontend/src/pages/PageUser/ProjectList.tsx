@@ -45,6 +45,7 @@ const ProjectList: React.FC = () => {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { showNotification } = useNotification();
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   const [newProject, setNewProject] = useState<{
     name: string;
     description: string;
@@ -64,30 +65,43 @@ const ProjectList: React.FC = () => {
   });
 
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
-
+  // Get current user ID from localStorage
+  useEffect(() => {
+    const userId = localStorage.getItem("currentUserId");
+    if (userId) {
+      setCurrentUserId(userId);
+    }
+  }, []);
   const handleEditorChange = (content: string) => {
     setNewProject((prev) => ({ ...prev, description: content }));
   };
 
   // Fetch projects with loading state
-  const fetchProjects = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("http://localhost:3000/projects/all");
-      const data = await response.json();
-      setProjects(data);
-      setFilteredProjects(data);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (currentUserId) {
+      const fetchProjects = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch("http://localhost:3000/projects/all");
+          const data = await response.json();
 
+          // Filter projects where the current user is a member
+          const userProjects = data.filter((project: Project) =>
+            project.user.some((user) => user._id === currentUserId)
+          );
+
+          setProjects(userProjects);
+          setFilteredProjects(userProjects);
+        } catch (error) {
+          console.error("Error fetching projects:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchProjects();
+    }
+  }, [currentUserId]);
   // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
@@ -111,7 +125,6 @@ const ProjectList: React.FC = () => {
 
     fetchUsers();
   }, []);
-
   // Fetch user profile for createdBy
   useEffect(() => {
     if (showModal && formMode === "create") {
@@ -149,6 +162,8 @@ const ProjectList: React.FC = () => {
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setSearchTerm(value);
+
+    // Filter from the user's projects
     const filtered = projects.filter((project) =>
       project.name.toLowerCase().includes(value.toLowerCase())
     );
