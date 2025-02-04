@@ -4,6 +4,7 @@ import { Editor } from "@tinymce/tinymce-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useNotification } from "../../components/user/Notification";
+import ProjectProgress from "../../components/admin/ProjectProgress";
 
 interface User {
   _id: string;
@@ -407,9 +408,7 @@ const MgProject: React.FC = () => {
                       {project.name}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-blue-900 text-blue-200 rounded-full text-sm">
-                        {project.projectCategory}
-                      </span>
+                      <ProjectProgress project={project} />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex -space-x-2">

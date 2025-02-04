@@ -28,6 +28,46 @@ interface AttendanceTableProps {
   month: string;
 }
 
+const getDaysInMonth = (month: number, year: number) => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+const isDateInPast = (date: string) => {
+  const today = new Date();
+  const compareDate = new Date(date);
+  // Set both dates to midnight for accurate comparison
+  today.setHours(0, 0, 0, 0);
+  compareDate.setHours(0, 0, 0, 0);
+  return compareDate <= today; // Changed to <= to include current date
+};
+// const filterDataForMonth = (
+//   data: AttendanceStatus[],
+//   month: number,
+//   year: number
+// ) => {
+//   const daysInMonth = getDaysInMonth(month, year);
+//   const monthStr = String(month + 1).padStart(2, "0");
+//   const yearStr = String(year);
+
+//   // Create an array for all days in the month
+//   const monthDays: AttendanceStatus[] = [];
+
+//   for (let day = 1; day <= daysInMonth; day++) {
+//     const dateStr = `${yearStr}-${monthStr}-${String(day).padStart(2, "0")}`;
+//     const foundDay = data.find((d) => d.date === dateStr);
+//     const isPastDate = isDateInPast(dateStr);
+
+//     monthDays.push({
+//       absent: foundDay ? foundDay.absent : isPastDate ? true : false,
+//       date: dateStr,
+//       time: foundDay?.time,
+//       reason:
+//         isPastDate && !foundDay ? "Nghỉ không có lý do" : foundDay?.reason,
+//     });
+//   }
+
+//   return monthDays;
+// };
 const AttendanceTable: React.FC<AttendanceTableProps> = ({
   title,
   days,
@@ -38,9 +78,49 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   const userId = localStorage.getItem("currentUserId");
   const [error, setError] = useState<string | null>(null);
   const { showNotification } = useNotification();
+
+  // Parse month string to get month and year
+  const [year, monthStr] = month.split("-");
+  const monthNum = parseInt(monthStr) - 1;
+  const daysInMonth = getDaysInMonth(monthNum, parseInt(year));
+  const firstDayOfMonth = new Date(parseInt(year), monthNum, 1).getDay();
+  // Create array of all days in month
+  const allDays = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    const dateString = `${year}-${monthStr}-${String(day).padStart(2, "0")}`;
+    const existingDay = days.find((d) => d.date === dateString);
+    const isPastDate = isDateInPast(dateString);
+
+    return {
+      absent: existingDay ? existingDay.absent : isPastDate ? true : false,
+      date: dateString,
+      time: existingDay?.time,
+      reason:
+        isPastDate && !existingDay
+          ? "Nghỉ không có lý do"
+          : existingDay?.reason,
+      isCurrentMonth: true,
+      isPastDate,
+    };
+  });
+
+  // Get day names for calendar header
+  const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+  const totalDays = firstDayOfMonth + daysInMonth;
+  const totalWeeks = Math.ceil(totalDays / 7);
+  const totalCells = totalWeeks * 7;
+  const remainingCells = totalCells - (firstDayOfMonth + daysInMonth);
+
+  // Create calendar grid with proper padding
+  const calendarGrid = [
+    ...Array(firstDayOfMonth).fill(null),
+    ...allDays,
+    ...Array(remainingCells).fill(null),
+  ];
+
   const fetchSalary = async () => {
     try {
-      // Gọi API để lấy lương
       const response = await fetch(
         `http://localhost:3000/payrolls/by-month?user_id=${userId}&month=${month}`
       );
@@ -48,20 +128,19 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       setSalary(data.total_salary);
     } catch (error) {
       console.error("Error fetching salary:", error);
-      console.log(setError);
+      setError("Không thể tải thông tin lương");
     }
   };
+
   const generateSalary = async () => {
     setIsLoading(true);
     try {
-      // Gọi API để tính lương
       await fetch(
         `http://localhost:3000/payrolls/generate?user_id=${userId}&month=${month}`,
         {
           method: "POST",
         }
       );
-      // Sau khi tính lương xong, fetch lại số lương mới
       await fetchSalary();
       showNotification("success", "Tính lương thành công!");
     } catch (error) {
@@ -71,30 +150,57 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       setIsLoading(false);
     }
   };
+
   return (
-    <div className="border rounded-lg shadow-md p-4 w-[400px] h-auto bg-white">
-      <h2 className="text-xl font-semibold text-center mb-4">{title}</h2>
-      <div className="grid grid-rows-6 grid-cols-6 gap-2">
-        {days.map((day, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-center w-12 h-12 border rounded-md bg-gray-100 relative group"
-            data-tooltip-id={`tooltip-${index}`}
-            data-tooltip-content={
-              day.absent
-                ? `${day.date} - Nghỉ: ${day.reason || "Không có lý do"}`
-                : `${day.date} - ${day.time || "8:00 - 17:00"}`
-            }
-          >
-            {day.absent ? (
-              <XMarkIcon className="w-6 h-6 text-red-500" />
-            ) : (
-              <CheckIcon className="w-6 h-6 text-green-500" />
+    <div className="border rounded-lg shadow-md p-6 w-full bg-white">
+      <h2 className="text-xl font-semibold text-center mb-6">{title}</h2>
+
+      {/* Calendar header */}
+      <div className="grid grid-cols-7 gap-2 mb-2">
+        {dayNames.map((day, index) => (
+          <div key={index} className="text-center font-medium text-gray-600">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-2">
+        {calendarGrid.map((day, index) => (
+          <div key={index} className="aspect-square">
+            {day && (
+              <div
+                className={`w-full h-full flex flex-col items-center justify-center border rounded-md relative group hover:bg-gray-100 transition-colors ${
+                  !day.isPastDate ? "bg-white" : "bg-gray-50"
+                }`}
+                data-tooltip-id={`tooltip-${index}`}
+                data-tooltip-content={
+                  day.isPastDate
+                    ? day.absent
+                      ? `${day.date} - Nghỉ: ${day.reason || "Không có lý do"}`
+                      : `${day.date} - ${day.time || "8:00 - 17:00"}`
+                    : `${day.date} - Chưa đến ngày`
+                }
+              >
+                <span className="text-xs text-gray-600 mb-1">
+                  {new Date(day.date).getDate()}
+                </span>
+                {day.isPastDate ? (
+                  day.absent ? (
+                    <XMarkIcon className="w-5 h-5 text-red-500" />
+                  ) : (
+                    <CheckIcon className="w-5 h-5 text-green-500" />
+                  )
+                ) : (
+                  <span className="w-5 h-5" />
+                )}
+              </div>
             )}
           </div>
         ))}
       </div>
-      <div className="mt-4 space-y-4">
+
+      <div className="mt-6 space-y-4">
         <button
           onClick={generateSalary}
           disabled={isLoading}
@@ -113,7 +219,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         )}
       </div>
 
-      {days.map((_, index) => (
+      {calendarGrid.map((_, index) => (
         <Tooltip key={index} id={`tooltip-${index}`} />
       ))}
     </div>
@@ -131,6 +237,7 @@ export default function Calendar() {
     reason: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const fetchAttendanceData = async () => {
     try {
       const userId = localStorage.getItem("currentUserId");
@@ -140,15 +247,13 @@ export default function Calendar() {
       );
       const data: AttendanceRecord[] = await response.json();
 
-      // Chuyển đổi dữ liệu API thành kiểu AttendanceStatus
       const transformedData: AttendanceStatus[] = data.map((record) => ({
         absent: !record.is_present,
-        date: new Date(record.date).toISOString().split("T")[0], // Chuyển sang định dạng yyyy-mm-dd
+        date: new Date(record.date).toISOString().split("T")[0],
         time: record.is_present ? "8:00 - 17:00" : undefined,
         reason: record.reason || undefined,
       }));
 
-      // Sắp xếp các ngày theo thứ tự tăng dần
       transformedData.sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       );
@@ -165,27 +270,13 @@ export default function Calendar() {
     month: number,
     year: number
   ) => {
-    const currentDate = new Date();
-    const currentDay = currentDate.getDate(); // Ngày hiện tại
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
 
-    // Tạo một mảng chứa các ngày từ 1 đến ngày hiện tại
-    const daysInMonth = Array.from({ length: currentDay }, (_, i) => i + 2); // [1, 2, 3, ..., currentDay]
-
-    // Tạo dữ liệu cho mỗi ngày trong tháng
-    const result: AttendanceStatus[] = daysInMonth.map((day) => {
-      const date = new Date(year, month, day);
-      const dateString = date.toISOString().split("T")[0]; // Format: yyyy-mm-dd
-      const attendanceData = data.find((d) => d.date === dateString);
-
-      return {
-        absent: attendanceData ? attendanceData.absent : true, // Nếu không có dữ liệu thì coi như vắng mặt
-        date: dateString,
-        time: attendanceData ? attendanceData.time : undefined,
-        reason: attendanceData ? attendanceData.reason : undefined,
-      };
+    return data.filter((item) => {
+      const itemDate = new Date(item.date);
+      return itemDate >= startDate && itemDate <= endDate;
     });
-
-    return result;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -210,11 +301,9 @@ export default function Calendar() {
         throw new Error("Failed to submit leave request");
       }
 
-      // Reset form and close modal
       setFormData({ date: "", reason: "" });
       setShowForm(false);
 
-      // Refresh attendance data
       const attendanceData = await fetchAttendanceData();
       const currentDate = new Date();
       const currentMonth = currentDate.getMonth();
@@ -223,19 +312,18 @@ export default function Calendar() {
       const monthsToShow = [];
       for (let i = 0; i <= currentMonth; i++) {
         const monthData = filterDataForMonth(attendanceData, i, currentYear);
-        if (monthData.length > 0) {
-          monthsToShow.push({ month: i, year: currentYear, days: monthData });
-        }
+        monthsToShow.push({ month: i, year: currentYear, days: monthData });
       }
       setMultiMonthData(monthsToShow);
       showNotification("success", "Đơn đã gửi thành công!");
     } catch (error) {
       showNotification("error", "Đơn gửi thất bại!");
-      console.log("error", error);
+      console.error("Error:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
   useEffect(() => {
     const loadAttendanceData = async () => {
       const attendanceData = await fetchAttendanceData();
@@ -246,24 +334,22 @@ export default function Calendar() {
       const monthsToShow = [];
       for (let i = 0; i <= currentMonth; i++) {
         const monthData = filterDataForMonth(attendanceData, i, currentYear);
-        if (monthData.length > 0) {
-          monthsToShow.push({ month: i, year: currentYear, days: monthData });
-        }
+        monthsToShow.push({ month: i, year: currentYear, days: monthData });
       }
       setMultiMonthData(monthsToShow);
     };
 
     loadAttendanceData();
 
-    const intervalId = setInterval(loadAttendanceData, 60000);
+    const intervalId = setInterval(loadAttendanceData, 60000); // Refresh every minute
     return () => clearInterval(intervalId);
   }, []);
 
   const closeModal = () => setShowForm(false);
   const navigate = useNavigate();
+
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* Header Actions */}
       <div className="fixed right-8 top-[130px] flex gap-4 z-10">
         <button
           onClick={() => navigate("/leave-request")}
@@ -279,7 +365,6 @@ export default function Calendar() {
         </button>
       </div>
 
-      {/* Calendar Grid */}
       <div className="container mx-auto px-4">
         <div className="grid gap-6 p-8 mt-[150px] grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {multiMonthData.map((data, index) => (
@@ -293,14 +378,13 @@ export default function Calendar() {
                 month={`${data.year}-${String(data.month + 1).padStart(
                   2,
                   "0"
-                )}`} // Format: YYYY-MM
+                )}`}
               />
             </div>
           ))}
         </div>
       </div>
 
-      {/* Modal Form */}
       {showForm && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
@@ -331,7 +415,7 @@ export default function Calendar() {
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
                   }
-                  min={new Date().toISOString().split("T")[0]} // Ngày hiện tại theo định dạng YYYY-MM-DD
+                  min={new Date().toISOString().split("T")[0]}
                   required
                 />
               </div>

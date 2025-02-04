@@ -108,9 +108,9 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ taskId, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl overflow-hidden">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b">
+        <div className="p-6 border-b flex-shrink-0">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800">{task.name}</h2>
             <button
@@ -121,9 +121,9 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ taskId, onClose }) => {
             </button>
           </div>
 
-          {/* Description Section */}
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">
+          {/* Description Section - Now Scrollable */}
+          <div className="mb-6 max-h-40 overflow-y-auto pr-3">
+            <h4 className="text-sm font-medium text-gray-700 mb-2 sticky top-0 bg-white z-10">
               Description
             </h4>
             <div
@@ -135,7 +135,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ taskId, onClose }) => {
           </div>
 
           {/* Due Date & Assigned Users */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-shrink-0">
             <div className="flex items-center text-gray-500">
               <FaRegClock className="mr-2" />
               <span className="text-sm">
@@ -157,7 +157,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ taskId, onClose }) => {
         </div>
 
         {/* Comment Form */}
-        <div className="p-6 border-b bg-gray-50">
+        <div className="p-6 border-b bg-gray-50 flex-shrink-0">
           <h4 className="text-sm font-medium text-gray-700 mb-3">
             Add a Comment
           </h4>
@@ -178,10 +178,10 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ taskId, onClose }) => {
           </div>
         </div>
 
-        {/* Comments List */}
-        <div className="overflow-y-auto max-h-[400px]">
+        {/* Comments List - Now Scrollable */}
+        <div className="flex-grow overflow-y-auto">
           <div className="p-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-4 sticky top-0 bg-white z-10">
               Comments ({comments.length})
             </h4>
             <div className="space-y-4">

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FaPlus, FaClock, FaFilter } from "react-icons/fa";
+import { FaPlus, FaClock, FaFilter, FaComment } from "react-icons/fa";
 import { Editor } from "@tinymce/tinymce-react";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import TaskDetail from "../../components/user/TaskDetail";
+import { useNotification } from "../../components/user/Notification";
 interface User {
   _id: string;
   name: string;
@@ -44,6 +45,10 @@ const KanbanBoard: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filterMyTasks, setFilterMyTasks] = useState(false);
+  const { showNotification } = useNotification();
+  const [commentCounts, setCommentCounts] = useState<{
+    [taskId: string]: number;
+  }>({});
   const [filterDeadline, setFilterDeadline] = useState<
     "all" | "urgent" | "overdue"
   >("all");
@@ -100,7 +105,33 @@ const KanbanBoard: React.FC = () => {
     };
     fetchUsers();
   }, [projectId]);
+  // Fetch comment counts for tasks
+  useEffect(() => {
+    const fetchCommentCounts = async () => {
+      try {
+        const commentCountPromises = tasks.map(async (task) => {
+          const response = await fetch(
+            `http://localhost:3000/comments/task/${task._id}`
+          );
+          const comments = await response.json();
+          return { [task._id]: comments.length };
+        });
 
+        const commentCountResults = await Promise.all(commentCountPromises);
+        const commentCountMap = commentCountResults.reduce(
+          (acc, curr) => ({ ...acc, ...curr }),
+          {}
+        );
+        setCommentCounts(commentCountMap);
+      } catch (error) {
+        console.error("Error fetching comment counts:", error);
+      }
+    };
+
+    if (tasks.length > 0) {
+      fetchCommentCounts();
+    }
+  }, [tasks]);
   // Hàm xử lý tìm kiếm
   // const handleSearch = async () => {
   //   if (!searchTerm.trim()) {
@@ -222,11 +253,20 @@ const KanbanBoard: React.FC = () => {
     if (!editingTask) return;
 
     try {
+      // Bật trạng thái loading trước khi update
+      setLoading(true);
+
       const accessToken = localStorage.getItem("accessToken");
       if (!accessToken) {
         console.error("Không có accessToken.");
+        setLoading(false);
         return;
       }
+
+      const updatedTaskData = {
+        ...newTask,
+        status: newTask.status || editingTask.status,
+      };
 
       const response = await fetch(
         `http://localhost:3000/tasks/update/${editingTask._id}`,
@@ -236,25 +276,30 @@ const KanbanBoard: React.FC = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({
-            ...newTask,
-          }),
+          body: JSON.stringify(updatedTaskData),
         }
       );
 
       if (response.ok) {
-        const updatedTask = await response.json();
-        setTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task._id === updatedTask._id ? updatedTask : task
-          )
+        // Fetch lại toàn bộ tasks để đảm bảo dữ liệu mới nhất
+        const fetchTasksResponse = await fetch(
+          `http://localhost:3000/tasks/project/${projectId}`
         );
+        const updatedTasks = await fetchTasksResponse.json();
+
+        // Cập nhật tasks và đóng modal
+        setTasks(updatedTasks);
         closeModal();
+        showNotification("success", "Cập nhật task thành công!");
       } else {
+        showNotification("error", "Đã xảy ra lỗi khi thực hiện thao tác!");
         console.error("Lỗi khi cập nhật task:", response.statusText);
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật task:", error);
+    } finally {
+      // Tắt trạng thái loading dù có lỗi hay không
+      setLoading(false);
     }
   };
   // Hàm xóa task
@@ -292,7 +337,7 @@ const KanbanBoard: React.FC = () => {
       name: task.name,
       description: task.description,
       user: task.user.map((u) => u._id),
-      status: task.status,
+      status: task.status, // Đảm bảo status được set đúng
       projectId: task.projectId,
       dueDate: task.dueDate
         ? new Date(task.dueDate).toISOString().split("T")[0]
@@ -328,7 +373,7 @@ const KanbanBoard: React.FC = () => {
   const renderTasks = (status: keyof typeof categorizedTasks) =>
     categorizedTasks[status].map((task) => {
       const timeStatus = getTimeRemaining(task.dueDate);
-
+      const commentCount = commentCounts[task._id] || 0;
       return (
         <div
           key={task._id}
@@ -378,20 +423,38 @@ const KanbanBoard: React.FC = () => {
                 />
               ))}
             </div>
-
-            {timeStatus && (
-              <div
-                className={`flex items-center px-3 py-1 rounded-full text-sm ${
-                  timeStatus.isOverdue
-                    ? "bg-red-100 text-red-600"
-                    : timeStatus.isUrgent
-                    ? "bg-orange-100 text-orange-600"
-                    : "bg-blue-100 text-blue-600"
-                }`}
-              >
-                <FaClock className="mr-1 w-3 h-3" />
-                <span>{timeStatus.text}</span>
+            {commentCount > 0 && (
+              <div className="flex items-center text-gray-600">
+                <FaComment className="mr-1 w-3 h-3" />
+                <span className="text-sm">{commentCount}</span>
               </div>
+            )}
+            {status === "Done" && task.dueDate ? (
+              <div className="flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-600">
+                <FaClock className="mr-1 w-3 h-3" />
+                <span>
+                  {new Date(task.dueDate).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+            ) : (
+              timeStatus && (
+                <div
+                  className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                    timeStatus.isOverdue
+                      ? "bg-red-100 text-red-600"
+                      : timeStatus.isUrgent
+                      ? "bg-orange-100 text-orange-600"
+                      : "bg-blue-100 text-blue-600"
+                  }`}
+                >
+                  <FaClock className="mr-1 w-3 h-3" />
+                  <span>{timeStatus.text}</span>
+                </div>
+              )
             )}
             {selectedTaskId && (
               <div className="task-detail-modal">
@@ -532,7 +595,7 @@ const KanbanBoard: React.FC = () => {
 
       {/* Modal for creating task */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-20">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-5xl w-full">
             <h2 className="text-2xl font-bold mb-4">
               {editingTask ? "Update Task" : "Create Task"}
@@ -743,7 +806,7 @@ const KanbanBoard: React.FC = () => {
               className="w-96 px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-          <div className="relative">
+          <div className="relative z-10">
             <button
               onClick={() => setShowFilterMenu(!showFilterMenu)}
               className="flex items-center px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50"
