@@ -13,6 +13,8 @@ import { AttendanceFormModule } from './module/attendanceform.module';
 import { AttendanceRecordModule } from './module/attendancerecord.module';
 import { LeaveRequestModule } from './module/leaverequest.module';
 import { PayrollModule } from './module/payroll.module';
+import { JobModule } from './module/job.module';
+import { ApplicationModule } from './module/application.module';
 
 dotenv.config();
 @Module({
@@ -25,6 +27,8 @@ dotenv.config();
     AttendanceRecordModule,
     LeaveRequestModule,
     PayrollModule,
+    JobModule,
+    ApplicationModule,
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGODB_URL),
     MailerModule.forRootAsync({
