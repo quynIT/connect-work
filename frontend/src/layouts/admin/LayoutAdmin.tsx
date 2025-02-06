@@ -18,7 +18,7 @@ type Link =
   | "Manage Notification"
   | "Attendance Management"
   | "Salary Management"
-  | "Task Management"
+  | "Recruitment Management"
   | "Project Management"
   | "Social Welfare Management";
 
@@ -100,12 +100,14 @@ export default function LayoutAdmin() {
             {isSidebarOpen && <span className="ml-2">Salary Management</span>}
           </Link>
           <Link
-            to="/admin/task-management"
-            className={linkClasses("Task Management")}
-            onClick={() => setActiveLink("Task Management")}
+            to="/admin/mg-recruitment"
+            className={linkClasses("Recruitment Management")}
+            onClick={() => setActiveLink("Recruitment Management")}
           >
             <BriefcaseIcon className="w-6 h-6" />
-            {isSidebarOpen && <span className="ml-2">Task Management</span>}
+            {isSidebarOpen && (
+              <span className="ml-2">Recruitment Management</span>
+            )}
           </Link>
           <Link
             to="/admin/mg-project"

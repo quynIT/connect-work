@@ -21,6 +21,7 @@ import EditAttendance from "../components/admin/EditAttendance";
 import LeaveRequestList from "../pages/PageUser/LeaveRequestList";
 import MonthlyPayroll from "../components/admin/MonthlyPayroll";
 import MgProject from "../pages/PageAdmin/MgProject";
+import MgRecruitment from "../pages/PageAdmin/MgRecruitment";
 export const routes = [
   {
     path: "/",
@@ -115,5 +116,9 @@ export const adminRoutes = [
   {
     path: "/admin/mg-project",
     page: MgProject,
+  },
+  {
+    path: "/admin/mg-recruitment",
+    page: MgRecruitment,
   },
 ];
