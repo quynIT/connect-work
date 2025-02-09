@@ -22,6 +22,7 @@ import LeaveRequestList from "../pages/PageUser/LeaveRequestList";
 import MonthlyPayroll from "../components/admin/MonthlyPayroll";
 import MgProject from "../pages/PageAdmin/MgProject";
 import MgRecruitment from "../pages/PageAdmin/MgRecruitment";
+import Recruitment from "../pages/PageUser/Recruitment";
 export const routes = [
   {
     path: "/",
@@ -58,6 +59,10 @@ export const routes = [
   {
     path: "/leave-request",
     page: LeaveRequestList,
+  },
+  {
+    path: "/recruitment",
+    page: Recruitment,
   },
   {
     path: "*",

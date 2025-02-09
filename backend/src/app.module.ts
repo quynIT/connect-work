@@ -29,7 +29,9 @@ dotenv.config();
     PayrollModule,
     JobModule,
     ApplicationModule,
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     MongooseModule.forRoot(process.env.MONGODB_URL),
     MailerModule.forRootAsync({
       imports: [ConfigModule],

@@ -11,6 +11,7 @@ const JobSchema = new Schema(
       enum: ['open', 'closed'],
       default: 'open',
     },
+    dueDate: { type: Date, default: null },
     attachments: [{ type: String }], // Danh sách file đính kèm (lưu URL hoặc đường dẫn file)
     // createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
@@ -29,6 +30,7 @@ export interface Job extends Document {
   location: string;
   salaryRange?: string;
   status: 'open' | 'closed';
+  dueDate?: Date;
   attachments?: string[]; // Danh sách file đính kèm
   //createdBy: string;
 }

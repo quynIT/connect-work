@@ -27,7 +27,7 @@ interface JobListing {
 interface NewJobListing extends Omit<JobListing, "attachments" | "_id"> {
   attachments: File[];
 }
-const JobListingBoard: React.FC = () => {
+const Recruitment: React.FC = () => {
   const [jobListings, setJobListings] = useState<JobListing[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -529,4 +529,4 @@ const JobListingBoard: React.FC = () => {
   );
 };
 
-export default JobListingBoard;
+export default Recruitment;

@@ -5,6 +5,7 @@ export class CreateJobDto {
   @IsNotEmpty() description: string;
   @IsNotEmpty() location: string;
   @IsOptional() salaryRange?: string;
+  @IsOptional() dueDate?: Date;
   @IsOptional() attachments?: string[];
 }
 
@@ -14,5 +15,6 @@ export class UpdateJobDto {
   @IsOptional() location?: string;
   @IsOptional() salaryRange?: string;
   @IsOptional() status?: 'open' | 'closed';
+  @IsOptional() dueDate?: Date;
   @IsOptional() attachments?: string[];
 }
