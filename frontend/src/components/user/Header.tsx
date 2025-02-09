@@ -64,6 +64,11 @@ export default function Header() {
                   Task Board
                 </Link>
               </li>
+              <li>
+                <Link className="hover:text-gray-200" to="/recruitment">
+                  Recruitment
+                </Link>
+              </li>
             </ul>
             {/* Header Icons */}
             <div className="hidden xl:flex items-center space-x-5">
