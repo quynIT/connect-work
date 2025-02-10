@@ -13,7 +13,7 @@ const ApplicationSchema = new Schema(
       fullName: { type: String, required: true },
       email: { type: String, required: true },
       phone: { type: String, required: true },
-      resume: { type: String, required: true }, // Link đến file CV
+      resume: [{ type: String }], // Link đến file CV
       submittedAt: { type: Date, default: Date.now },
     },
     status: {
@@ -58,7 +58,7 @@ export interface Application extends Document {
     fullName: string;
     email: string;
     phone: string;
-    resume: string;
+    resume?: string[];
     submittedAt: Date;
   };
   status: 'pending' | 'passed' | 'interview' | 'probation' | 'rejected';

@@ -109,8 +109,84 @@ export class JobController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateJobDto: UpdateJobDto) {
-    return await this.jobService.updateJob(id, updateJobDto);
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        const allowedMimes = [
+          // Images
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+          // Documents
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          // Text
+          'text/plain',
+          // Archives
+          'application/zip',
+          'application/x-rar-compressed',
+          // Others
+          'application/octet-stream',
+        ];
+
+        if (!allowedMimes.includes(file.mimetype)) {
+          return callback(
+            new BadRequestException(
+              `File type not allowed. Allowed types are: ${allowedMimes.join(', ')}`,
+            ),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limit
+      },
+    }),
+  )
+  async update(
+    @Param('id') id: string,
+    @Body() updateJobDto: UpdateJobDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    try {
+      let fileData = null;
+
+      // If a file is uploaded, process it
+      if (file) {
+        console.log('Uploading file for update:', {
+          filename: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+        });
+
+        fileData = await this.googleDriveService.uploadFile(file);
+
+        // Merge the file data with the update DTO
+        updateJobDto = {
+          ...updateJobDto,
+          attachments: [fileData.downloadLink],
+        };
+      }
+
+      // Update the job with the new data
+      const updatedJob = await this.jobService.updateJob(id, updateJobDto);
+
+      return {
+        success: true,
+        data: updatedJob,
+        ...(fileData && { file: fileData }),
+      };
+    } catch (error) {
+      console.error('Error in updateJob:', error);
+      throw new BadRequestException(`Failed to update job: ${error.message}`);
+    }
   }
 
   @Delete(':id')

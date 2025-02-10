@@ -23,6 +23,7 @@ import MonthlyPayroll from "../components/admin/MonthlyPayroll";
 import MgProject from "../pages/PageAdmin/MgProject";
 import MgRecruitment from "../pages/PageAdmin/MgRecruitment";
 import Recruitment from "../pages/PageUser/Recruitment";
+import JobDetailPage from "../components/user/JobDetail";
 export const routes = [
   {
     path: "/",
@@ -63,6 +64,10 @@ export const routes = [
   {
     path: "/recruitment",
     page: Recruitment,
+  },
+  {
+    path: "/recruitment/:id",
+    page: JobDetailPage,
   },
   {
     path: "*",

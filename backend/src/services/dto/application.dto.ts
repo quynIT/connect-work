@@ -5,7 +5,7 @@ export class CreateApplicationDto {
   @IsNotEmpty() fullName: string;
   @IsNotEmpty() @IsEmail() email: string;
   @IsNotEmpty() phone: string;
-  @IsNotEmpty() resume: string; // Link đến file CV
+  @IsNotEmpty() resume: string[]; // Link đến file CV
   @IsOptional() submittedAt?: Date; // Giữ nó là tùy chọn
 }
 
@@ -13,7 +13,7 @@ export class UpdateApplicationDto {
   @IsOptional() fullName?: string;
   @IsOptional() email?: string;
   @IsOptional() phone?: string;
-  @IsOptional() resume?: string;
+  @IsOptional() resume?: string[];
   @IsOptional() status?: Status;
   @IsOptional() notes?: string;
   @IsOptional() reviewedBy?: string;

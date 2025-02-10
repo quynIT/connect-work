@@ -615,7 +615,7 @@ const MgProject: React.FC = () => {
                         Project Description
                       </label>
                       <Editor
-                        apiKey="2x0ufb2p4n449q9kvsa68unyrmh0vdhfkp2kxi2ccnmxlriv"
+                        apiKey="zro2pt95ubysk411xiu8r3u34h94jdak3t3vrn1rjwqucvc2"
                         init={{
                           height: 300,
                           menubar: false,

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { MapPin, DollarSign, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface JobListing {
   _id: string;
@@ -16,7 +17,11 @@ interface JobListing {
 const CocaColaCareers: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"about" | "jobs">("about");
   const [jobListings, setJobListings] = useState<JobListing[]>([]);
+  const navigate = useNavigate();
 
+  const handleViewDetails = (jobId: string) => {
+    navigate(`/recruitment/${jobId}`);
+  };
   const fetchJobListings = async () => {
     try {
       const response = await fetch("http://localhost:3000/jobs", {
@@ -75,7 +80,7 @@ const CocaColaCareers: React.FC = () => {
       {/* Profile Section */}
       <div className="container mx-auto px-4 -mt-16 relative z-10">
         <div className="flex items-start gap-6">
-          <div className="w-32 h-32 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="w-32 h-32 bg-black rounded-lg shadow-md overflow-hidden">
             <img
               src="../../../public/logo.png"
               alt="Coca-Cola Vietnam Logo"
@@ -194,10 +199,7 @@ const CocaColaCareers: React.FC = () => {
 
                   <button
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors"
-                    onClick={() => {
-                      // Add your view details logic here
-                      console.log("View details for job:", job._id);
-                    }}
+                    onClick={() => handleViewDetails(job._id)}
                   >
                     Xem chi tiết
                   </button>

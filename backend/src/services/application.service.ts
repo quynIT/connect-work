@@ -12,17 +12,25 @@ export class ApplicationService {
   constructor(private readonly applicationRepository: ApplicationRepository) {}
 
   // Tạo ứng tuyển mới
-  async createApplication(jobId: string, candidate: CreateApplicationDto) {
-    // Nếu submittedAt không được cung cấp, gán giá trị mặc định
-    const submittedAt = candidate.submittedAt || new Date();
-    const newApplication = await this.applicationRepository.create({
+  async createApplication(
+    jobId: string,
+    createApplicationDto: CreateApplicationDto,
+  ) {
+    const submittedAt = createApplicationDto.submittedAt || new Date();
+
+    const application = await this.applicationRepository.create({
       jobId,
       candidate: {
-        ...candidate,
-        submittedAt, // Gán giá trị cho submittedAt nếu chưa có
+        fullName: createApplicationDto.fullName,
+        email: createApplicationDto.email,
+        phone: createApplicationDto.phone,
+        resume: createApplicationDto.resume,
+        submittedAt,
       },
+      status: 'pending',
     });
-    return newApplication;
+
+    return application;
   }
 
   // Lấy tất cả các ứng tuyển

@@ -6,16 +6,19 @@ import { ApplicationRepository } from 'src/services/repositories/application.rep
 import { UserModule } from 'src/user/user.module';
 import { ApplicationSchema } from 'src/models/application.model';
 import { ApplicationController } from 'src/controllers/application.controller';
+import { GoogleDriveService } from 'src/services/google-drive.service';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
     UserModule,
+    MulterModule.register(),
     MongooseModule.forFeature([
       { name: 'Application', schema: ApplicationSchema },
     ]),
   ],
   controllers: [ApplicationController],
-  providers: [ApplicationService, ApplicationRepository],
+  providers: [ApplicationService, ApplicationRepository, GoogleDriveService],
   exports: [ApplicationService, ApplicationRepository],
 })
 export class ApplicationModule {}
