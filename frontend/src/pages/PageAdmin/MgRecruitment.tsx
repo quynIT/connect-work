@@ -10,10 +10,12 @@ import {
   Calendar,
   Filter,
   Edit,
+  Trash2,
 } from "lucide-react";
 import { Editor } from "@tinymce/tinymce-react";
 import { remove as removeDiacritics } from "diacritics";
 import { useNotification } from "../../components/user/Notification";
+import { Link } from "react-router-dom";
 interface JobListing {
   _id: string;
   title: string;
@@ -314,7 +316,26 @@ const JobListingBoard: React.FC = () => {
       setIsLoading(false);
     }
   };
+  const handleDelete = async (jobId: string) => {
+    if (window.confirm("Are you sure you want to delete this job?")) {
+      try {
+        const response = await fetch(`http://localhost:3000/jobs/${jobId}`, {
+          method: "DELETE",
+        });
 
+        if (response.ok) {
+          setJobListings((prevJobs) => [...prevJobs]);
+          await fetchJobListings();
+          showNotification("success", "Job create successfully");
+        } else {
+          throw new Error("Failed to delete job");
+        }
+      } catch (error) {
+        console.error("Error deleting job:", error);
+        // Add appropriate error handling/notification here
+      }
+    }
+  };
   return (
     <div className="bg-gray-900 min-h-screen p-6">
       <div className="container mx-auto">
@@ -394,30 +415,43 @@ const JobListingBoard: React.FC = () => {
               className="bg-gray-800 p-6 rounded-lg shadow-lg hover:bg-gray-700 transition-colors"
             >
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-white">
-                  {job.title}
-                </h2>
-                <button
-                  onClick={() => handleOpenUpdateModal(job)}
-                  className="px-3 py-1 rounded-full text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white"
+                <Link
+                  to={`/admin/mg-recruitment/${job._id}`}
+                  className="hover:opacity-80 transition-opacity"
                 >
-                  <Edit size={16} className="inline mr-1" /> Edit
-                </button>
-                <button
-                  onClick={() => toggleJobStatus(job._id, job.status || "")}
-                  className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors ${
-                    (job.status.toLowerCase() || "") === "open"
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-red-600 hover:bg-red-700 text-white"
-                  }`}
-                >
-                  {job.status ? job.status.toUpperCase() : "UNKNOWN"}
-                </button>
+                  <h2 className="text-xl font-semibold text-white truncate max-w-[600px] cursor-pointer">
+                    {job.title}
+                  </h2>
+                </Link>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleOpenUpdateModal(job)}
+                    className="px-3 py-1 rounded-full text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Edit size={16} className="inline mr-1" /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(job._id)}
+                    className="px-3 py-1 rounded-full text-sm font-medium bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <Trash2 size={16} className="inline mr-1" /> Delete
+                  </button>
+                  <button
+                    onClick={() => toggleJobStatus(job._id, job.status || "")}
+                    className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors ${
+                      (job.status.toLowerCase() || "") === "open"
+                        ? "bg-green-600 hover:bg-green-700 text-white"
+                        : "bg-red-600 hover:bg-red-700 text-white"
+                    }`}
+                  >
+                    {job.status ? job.status.toUpperCase() : "UNKNOWN"}
+                  </button>
+                </div>
               </div>
 
               <div
                 dangerouslySetInnerHTML={{ __html: job.description }}
-                className="text-gray-300 mb-4"
+                className="text-gray-300 mb-4 line-clamp-2 overflow-hidden"
               />
 
               <div className="grid grid-cols-4 gap-4 text-gray-400">

@@ -1,15 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Application } from '../models/application.model';
+import { Application, Status } from '../models/application.model';
 import {
   CreateApplicationDto,
   CreateAssessmentDto,
   UpdateApplicationDto,
 } from '../services/dto/application.dto';
 import { ApplicationRepository } from './repositories/application.repository';
+import { MailerService } from '@nestjs-modules/mailer';
+import * as path from 'path';
+import { promises as fs } from 'fs';
 
 @Injectable()
 export class ApplicationService {
-  constructor(private readonly applicationRepository: ApplicationRepository) {}
+  constructor(
+    private readonly applicationRepository: ApplicationRepository,
+    private mailerService: MailerService,
+  ) {}
 
   // Tạo ứng tuyển mới
   async createApplication(
@@ -54,7 +60,53 @@ export class ApplicationService {
     }
 
     const updatedApplication =
-      await this.applicationRepository.findByIdAndUpdate(id, updateData);
+      await this.applicationRepository.findByIdAndUpdate(id, {
+        ...updateData,
+        reviewedAt: new Date(), // Thêm thời gian review
+      });
+
+    // Gửi email dựa trên trạng thái mới
+    if (updateData.status) {
+      const candidateEmail = existingApplication.candidate.email;
+      const candidateName = existingApplication.candidate.fullName;
+      switch (updateData.status) {
+        case Status.Passed:
+          await this.sendEmail(
+            candidateEmail,
+            'Chúc mừng! Bạn đã vượt qua vòng CV',
+            'cv-passed',
+            {
+              name: candidateName,
+            },
+          );
+          break;
+
+        case Status.Rejected:
+          await this.sendEmail(
+            candidateEmail,
+            'Thông báo kết quả ứng tuyển',
+            'cv-rejected',
+            {
+              name: candidateName,
+            },
+          );
+          break;
+
+        case Status.Probation:
+          await this.sendEmail(
+            candidateEmail,
+            'Chúc mừng! Chào mừng bạn đến với Connect Work',
+            'welcome-probation',
+            {
+              name: candidateName,
+              position: existingApplication.jobId,
+              startDate: new Date().toLocaleDateString('vi-VN'),
+            },
+          );
+          break;
+      }
+    }
+
     return updatedApplication;
   }
   // Phương thức cập nhật toàn bộ thông tin ứng viên
@@ -99,5 +151,39 @@ export class ApplicationService {
   // Xóa ứng tuyển
   async deleteApplication(id: string): Promise<any> {
     return await this.applicationRepository.deleteOne(id);
+  }
+  async readTemplate(
+    templateName: string,
+    variables: Record<string, string>,
+  ): Promise<string> {
+    const templatePath = path.join(
+      process.cwd(),
+      'src/templates/email',
+      `${templateName}.html`,
+    );
+    let template = await fs.readFile(templatePath, 'utf-8');
+
+    for (const [key, value] of Object.entries(variables)) {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      template = template.replace(regex, value);
+    }
+
+    return template;
+  }
+
+  async sendEmail(
+    to: string,
+    subject: string,
+    templateName: string,
+    variables: Record<string, string> = {},
+  ) {
+    const emailContent = await this.readTemplate(templateName, variables);
+
+    await this.mailerService.sendMail({
+      to,
+      from: '"Connect Work" <your-email@example.com>',
+      subject,
+      html: emailContent,
+    });
   }
 }

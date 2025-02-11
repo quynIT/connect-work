@@ -24,6 +24,8 @@ import MgProject from "../pages/PageAdmin/MgProject";
 import MgRecruitment from "../pages/PageAdmin/MgRecruitment";
 import Recruitment from "../pages/PageUser/Recruitment";
 import JobDetailPage from "../components/user/JobDetail";
+import JobDetailAdmin from "../components/admin/JobdetailAdmin";
+import CVDetail from "../components/admin/CvDetail";
 export const routes = [
   {
     path: "/",
@@ -130,5 +132,13 @@ export const adminRoutes = [
   {
     path: "/admin/mg-recruitment",
     page: MgRecruitment,
+  },
+  {
+    path: "/admin/mg-recruitment/:id",
+    page: JobDetailAdmin,
+  },
+  {
+    path: "/admin/mg-recruitment/cv/:id",
+    page: CVDetail,
   },
 ];

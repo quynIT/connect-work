@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+
+      .email-container {
+        background-color: #ffffff;
+        width: 90%;
+        max-width: 600px;
+        margin: 30px auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background-color: #4285f4;
+        color: #ffffff;
+        text-align: center;
+        padding: 30px 20px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .welcome-badge {
+        background-color: #e8f5e9;
+        margin: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        color: #2e7d32;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .content p {
+        margin: 10px 0;
+        line-height: 1.6;
+        color: #333333;
+      }
+
+      .next-steps {
+        background-color: #f8f9fa;
+        margin: 20px;
+        padding: 20px;
+        border-radius: 8px;
+      }
+
+      .next-steps h3 {
+        color: #4285f4;
+        margin-top: 0;
+      }
+
+      .important-info {
+        background-color: #fff3e0;
+        margin: 20px;
+        padding: 20px;
+        border-radius: 8px;
+      }
+
+      .important-info h3 {
+        color: #f57c00;
+        margin-top: 0;
+      }
+
+      .footer {
+        background-color: #f7f7f7;
+        text-align: center;
+        padding: 20px;
+        color: #666666;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <h1>🎉 Chào mừng đến với Connect Work!</h1>
+      </div>
+
+      <div class="content">
+        <div class="welcome-badge">
+          <h2>Chúc mừng {{name}}!</h2>
+          <p>
+            Bạn đã chính thức trở thành thành viên của đại gia đình Connect Work
+          </p>
+        </div>
+
+        <p>Xin chào <strong>{{name}}</strong>,</p>
+
+        <p>
+          Chúng tôi rất vui mừng thông báo rằng bạn đã chính thức trở thành nhân
+          viên thử việc tại Connect Work. Chúng tôi tin rằng bạn sẽ là một phần
+          quan trọng trong sự phát triển của công ty.
+        </p>
+
+        <div class="next-steps">
+          <h3>📝 Các bước tiếp theo</h3>
+          <ul>
+            <li>Ngày bắt đầu làm việc: <strong>{{startDate}}</strong></li>
+            <li>Địa điểm: <strong>Văn phòng Connect Work</strong></li>
+            <li>Thời gian thử việc: <strong>2 tháng</strong></li>
+          </ul>
+        </div>
+
+        <div class="important-info">
+          <h3>ℹ️ Thông tin quan trọng</h3>
+          <ul>
+            <li>Mang theo CMND/CCCD và các văn bằng chứng chỉ (bản gốc)</li>
+            <li>Ảnh 3x4 (2 tấm)</li>
+            <li>Sổ bảo hiểm xã hội (nếu có)</li>
+            <li>Trang phục lịch sự, chuyên nghiệp</li>
+          </ul>
+        </div>
+
+        <p>Trong những ngày đầu, bạn sẽ được:</p>
+        <ul>
+          <li>Hướng dẫn chi tiết về công việc</li>
+          <li>Làm quen với đồng nghiệp và môi trường làm việc</li>
+          <li>Được cấp tài khoản và các quyền truy cập cần thiết</li>
+          <li>Tham gia các buổi đào tạo nội bộ</li>
+        </ul>
+
+        <p>
+          Nếu bạn có bất kỳ câu hỏi nào, đừng ngần ngại liên hệ với phòng HR qua
+          email hoặc số điện thoại được cung cấp.
+        </p>
+
+        <p>Một lần nữa chúc mừng và hẹn gặp bạn!</p>
+      </div>
+
+      <div class="footer">
+        <p>
+          Trân trọng,<br />
+          <strong>Connect Work HR Team</strong><br />
+          Email: hr@connectwork.com<br />
+          Hotline: 0329.903.471
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
