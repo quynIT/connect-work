@@ -36,6 +36,7 @@ enum Status {
   Passed = "passed",
   Interview = "interview",
   Probation = "probation",
+  Test = "test",
   Rejected = "rejected",
 }
 
@@ -82,6 +83,7 @@ const JobDetailAdmin = () => {
       [Status.Passed]: "bg-green-900 text-green-300",
       [Status.Interview]: "bg-blue-900 text-blue-300",
       [Status.Probation]: "bg-purple-900 text-purple-300",
+      [Status.Test]: "bg-indigo-900 text-indigo-300",
       [Status.Rejected]: "bg-red-900 text-red-300",
     };
     return colors[status];
@@ -93,6 +95,7 @@ const JobDetailAdmin = () => {
       [Status.Passed]: "Đạt",
       [Status.Interview]: "Phỏng vấn",
       [Status.Probation]: "Thử việc",
+      [Status.Test]: "Thi",
       [Status.Rejected]: "Từ chối",
     };
     return labels[status];

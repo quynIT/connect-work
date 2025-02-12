@@ -16,6 +16,7 @@ interface Application {
   candidate: Candidate;
   status: string;
   createdAt: string;
+  assessments: Assessment[];
 }
 
 interface Assessment {
@@ -96,7 +97,7 @@ const CVDetail = () => {
     { label: "Đạt", value: "passed" },
     { label: "Phỏng vấn", value: "interview" },
     { label: "Thi", value: "test" },
-    { label: "Đồng ý nhận việc", value: "accepted" },
+    { label: "Đồng ý nhận việc", value: "probation" },
   ];
 
   const statusOrder = {
@@ -104,7 +105,7 @@ const CVDetail = () => {
     passed: 1,
     interview: 2,
     test: 3,
-    accepted: 4,
+    probation: 4,
   };
 
   useEffect(() => {
@@ -132,18 +133,8 @@ const CVDetail = () => {
       return () => clearTimeout(timer);
     }
   }, [error]);
-  const hasValidAssessment = () => {
-    return application?.assessments?.some(
-      (assessment) =>
-        assessment.scores.skills > 0 ||
-        assessment.scores.knowledge > 0 ||
-        assessment.scores.expertise > 0
-    );
-  };
+
   const getStepStatus = (stepValue: string) => {
-    if (stepValue === "test") {
-      return hasValidAssessment();
-    }
     const stepIndex = statusOrder[stepValue as keyof typeof statusOrder] || 0;
     const currentIndex =
       statusOrder[application?.status as keyof typeof statusOrder] || 0;
@@ -256,6 +247,22 @@ const CVDetail = () => {
 
       if (!response.ok) throw new Error("Failed to submit assessment");
 
+      // Cập nhật status thành "test" sau khi đánh giá thành công
+      const statusResponse = await fetch(
+        `http://localhost:3000/applications/status/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "test" }),
+        }
+      );
+
+      if (!statusResponse.ok) throw new Error("Failed to update status");
+
+      // Cập nhật state local
+      setApplication((prev) => (prev ? { ...prev, status: "test" } : null));
       setShowEvaluation(false);
     } catch (error) {
       console.error("Error submitting assessment:", error);
@@ -458,16 +465,25 @@ const CVDetail = () => {
                     <p>178</p>
                   </div>
                   <div>
-                    <p className="mb-2 text-gray-500">Cân nặng</p>
-                    <p>70</p>
+                    <p className="mb-2 text-gray-500">Skills</p>
+                    <p>
+                      {application.assessments?.[0]?.scores?.skills ||
+                        "Chưa có"}
+                    </p>
                   </div>
                   <div>
-                    <p className="mb-2 text-gray-500">Dân tộc</p>
-                    <p>Kinh</p>
+                    <p className="mb-2 text-gray-500">Knowledge</p>
+                    <p>
+                      {application.assessments?.[0]?.scores?.knowledge ||
+                        "Chưa có"}
+                    </p>
                   </div>
                   <div>
-                    <p className="mb-2 text-gray-500">Tôn giáo</p>
-                    <p>Không</p>
+                    <p className="mb-2 text-gray-500">Expertise</p>
+                    <p>
+                      {application.assessments?.[0]?.scores?.expertise ||
+                        "Chưa có"}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -4,6 +4,7 @@ export enum Status {
   Passed = 'passed',
   Interview = 'interview',
   Probation = 'probation',
+  Test = 'test',
   Rejected = 'rejected',
 }
 const ApplicationSchema = new Schema(
@@ -18,7 +19,7 @@ const ApplicationSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'passed', 'interview', 'probation', 'rejected'],
+      enum: ['pending', 'passed', 'interview', 'test', 'probation', 'rejected'],
       default: 'pending',
     },
     reviewedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null }, // HR duyệt hồ sơ
@@ -61,7 +62,13 @@ export interface Application extends Document {
     resume?: string[];
     submittedAt: Date;
   };
-  status: 'pending' | 'passed' | 'interview' | 'probation' | 'rejected';
+  status:
+    | 'pending'
+    | 'passed'
+    | 'interview'
+    | 'test'
+    | 'probation'
+    | 'rejected';
   reviewedBy?: string;
   reviewedAt?: Date;
   notes?: string;

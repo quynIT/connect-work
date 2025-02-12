@@ -89,7 +89,7 @@ const CocaColaCareers: React.FC = () => {
           </div>
           <div className="flex-1 pt-16 mt-3">
             <h1 className="text-2xl font-bold text-gray-800">
-              Nước giải khát Coca-Cola Việt Nam
+              Công ty TNHH Connect Work
             </h1>
             <p className="text-gray-600">1656 lượt theo dõi</p>
           </div>

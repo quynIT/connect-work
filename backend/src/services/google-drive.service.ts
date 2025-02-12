@@ -20,8 +20,6 @@ export class GoogleDriveService {
         privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----\n`;
       }
 
-      this.logger.debug('Client Email:', process.env.GOOGLE_CLIENT_EMAIL);
-
       if (!process.env.GOOGLE_CLIENT_EMAIL || !privateKey) {
         throw new Error('Missing Google Drive credentials');
       }
