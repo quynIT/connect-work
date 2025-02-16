@@ -26,6 +26,7 @@ import Recruitment from "../pages/PageUser/Recruitment";
 import JobDetailPage from "../components/user/JobDetail";
 import JobDetailAdmin from "../components/admin/JobdetailAdmin";
 import CVDetail from "../components/admin/CvDetail";
+import NotificationDetail from "../components/user/DetailNotification";
 export const routes = [
   {
     path: "/",
@@ -50,6 +51,10 @@ export const routes = [
   {
     path: "/notification-list",
     page: NotificationList,
+  },
+  {
+    path: "/notification-list/alo",
+    page: NotificationDetail,
   },
   {
     path: "/change-password",

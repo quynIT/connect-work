@@ -94,8 +94,8 @@ const JobDetailAdmin = () => {
       [Status.Pending]: "Đang chờ",
       [Status.Passed]: "Đạt",
       [Status.Interview]: "Phỏng vấn",
-      [Status.Probation]: "Thử việc",
       [Status.Test]: "Thi",
+      [Status.Probation]: "Thử việc",
       [Status.Rejected]: "Từ chối",
     };
     return labels[status];

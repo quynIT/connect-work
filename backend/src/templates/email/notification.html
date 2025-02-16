@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Thông báo mới</title>
+  </head>
+  <body>
+    <h2 style="color: #e53e3e">{{title}}</h2>
+    <p><strong>Mức độ ưu tiên:</strong> Cao</p>
+    <p><strong>Loại thông báo:</strong> {{type}}</p>
+    <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc">
+      {{content}}
+    </div>
+    {{#if attachmentUrl}}
+    <p>
+      <strong>File đính kèm:</strong>
+      <a href="{{attachmentUrl}}">Xem tại đây</a>
+    </p>
+    {{/if}}
+    <hr />
+    <p style="color: #718096; font-size: 0.875rem">
+      Email này được gửi tự động từ hệ thống Connect Work.
+    </p>
+  </body>
+</html>

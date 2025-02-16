@@ -15,6 +15,7 @@ import { LeaveRequestModule } from './module/leaverequest.module';
 import { PayrollModule } from './module/payroll.module';
 import { JobModule } from './module/job.module';
 import { ApplicationModule } from './module/application.module';
+import { NotificationModule } from './module/notification.module';
 
 dotenv.config();
 @Module({
@@ -29,6 +30,7 @@ dotenv.config();
     PayrollModule,
     JobModule,
     ApplicationModule,
+    NotificationModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
