@@ -7,7 +7,7 @@ import {
   Put,
   Delete,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
   BadRequestException,
 } from '@nestjs/common';
 import { NotificationService } from '../services/notification.service';
@@ -15,7 +15,7 @@ import {
   CreateNotificationDto,
   UpdateNotificationDto,
 } from '../services/dto/notification.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { GoogleDriveService } from '../services/google-drive.service';
 
 @Controller('notifications')
@@ -27,7 +27,7 @@ export class NotificationController {
 
   @Post()
   @UseInterceptors(
-    FileInterceptor('file', {
+    FilesInterceptor('files', 3, {
       fileFilter: (req, file, callback) => {
         const allowedMimes = [
           'image/jpeg',
@@ -58,21 +58,28 @@ export class NotificationController {
     }),
   )
   async createNotification(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[], // Thay đổi từ UploadedFile sang UploadedFiles
     @Body() createNotificationDto: CreateNotificationDto,
   ) {
     try {
       let attachments = [];
 
-      if (file) {
-        console.log('Uploading file:', {
-          filename: file.originalname,
-          mimetype: file.mimetype,
-          size: file.size,
-        });
+      if (files && files.length > 0) {
+        console.log(
+          'Uploading files:',
+          files.map((file) => ({
+            filename: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+          })),
+        );
 
-        const fileData = await this.googleDriveService.uploadFile(file);
-        attachments = [fileData.downloadLink];
+        // Upload tất cả các file và lưu download links
+        const uploadPromises = files.map((file) =>
+          this.googleDriveService.uploadFile(file),
+        );
+        const uploadedFiles = await Promise.all(uploadPromises);
+        attachments = uploadedFiles.map((fileData) => fileData.downloadLink);
       }
 
       const notification = await this.notificationService.createNotification({
@@ -83,7 +90,10 @@ export class NotificationController {
       return {
         success: true,
         data: notification,
-        file: file ? { downloadLink: attachments[0] } : null,
+        files:
+          attachments.length > 0
+            ? attachments.map((link) => ({ downloadLink: link }))
+            : null,
       };
     } catch (error) {
       console.error('Error in createNotification:', error);
@@ -105,7 +115,8 @@ export class NotificationController {
 
   @Put(':id')
   @UseInterceptors(
-    FileInterceptor('file', {
+    FilesInterceptor('files', 3, {
+      // Thay đổi từ FileInterceptor sang FilesInterceptor, giới hạn 3 file
       fileFilter: (req, file, callback) => {
         const allowedMimes = [
           'image/jpeg',
@@ -131,27 +142,38 @@ export class NotificationController {
         callback(null, true);
       },
       limits: {
-        fileSize: 10 * 1024 * 1024,
+        fileSize: 10 * 1024 * 1024, // 10MB limit per file
       },
     }),
   )
   async update(
     @Param('id') id: string,
     @Body() updateNotificationDto: UpdateNotificationDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles() files?: Express.Multer.File[], // Thay đổi từ UploadedFile sang UploadedFiles
   ) {
     try {
-      let fileData = null;
+      let uploadedFiles = [];
 
-      if (file) {
-        console.log('Uploading file for update:', {
-          filename: file.originalname,
-          mimetype: file.mimetype,
-          size: file.size,
-        });
+      if (files && files.length > 0) {
+        console.log(
+          'Uploading files for update:',
+          files.map((file) => ({
+            filename: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+          })),
+        );
 
-        fileData = await this.googleDriveService.uploadFile(file);
-        updateNotificationDto.attachments = [fileData.downloadLink];
+        // Upload tất cả các file đồng thời
+        const uploadPromises = files.map((file) =>
+          this.googleDriveService.uploadFile(file),
+        );
+        uploadedFiles = await Promise.all(uploadPromises);
+
+        // Cập nhật mảng attachments với các download links mới
+        updateNotificationDto.attachments = uploadedFiles.map(
+          (file) => file.downloadLink,
+        );
       }
 
       const updatedNotification =
@@ -163,7 +185,7 @@ export class NotificationController {
       return {
         success: true,
         data: updatedNotification,
-        file: fileData,
+        files: uploadedFiles.length > 0 ? uploadedFiles : null,
       };
     } catch (error) {
       console.error('Error in updateNotification:', error);
