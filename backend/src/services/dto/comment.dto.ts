@@ -3,11 +3,11 @@ import { Types } from 'mongoose';
 
 export class CreateCommentDto {
   @IsNotEmpty()
-  taskId: Types.ObjectId; // ID của Task
+  taskId: Types.ObjectId;
 
   @IsNotEmpty()
-  user: string[]; // ID của User
+  user: string[];
 
   @IsNotEmpty()
-  content: string; // Nội dung comment
+  content: string;
 }
