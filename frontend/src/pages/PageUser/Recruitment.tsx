@@ -72,7 +72,7 @@ const CocaColaCareers: React.FC = () => {
       <div className="w-full h-64 bg-sky-200 relative">
         <img
           src="../src/assets/bg_home.jpg"
-          alt="Coca-Cola Vietnam Banner"
+          alt="Connect Work Vietnam Banner"
           className="w-full h-full object-cover"
         />
       </div>
@@ -83,7 +83,7 @@ const CocaColaCareers: React.FC = () => {
           <div className="w-32 h-32 bg-black rounded-lg shadow-md overflow-hidden">
             <img
               src="../../../public/logo.png"
-              alt="Coca-Cola Vietnam Logo"
+              alt="Connect Work Vietnam Logo"
               className="w-full h-full object-contain p-2"
             />
           </div>
@@ -153,19 +153,19 @@ const CocaColaCareers: React.FC = () => {
               </div>
               <div>
                 <p className="text-gray-700 leading-relaxed">
-                  Coca-Cola Việt Nam là một thành viên của Swire Coca-Cola
+                  Connect Work Việt Nam là một thành viên của Swire Connect Work
                   Limited - đối tác đóng chai lớn thứ năm trong hệ thống dựa
                   trên số lượng bán toàn cầu, được cấp quyền sản xuất, tiếp thị
-                  và phân phối các sản phẩm của Tập đoàn Coca-Cola. COCA-COLA
-                  VIỆT NAM TỰ HÀO HÀNH TRÌNH ĐÓNG KIẾN TẠO SỰG KHOÁI TRỌNG VĂN
-                  HÓA DOANH NGHIỆP Tại Coca-Cola Việt Nam, chúng tôi cam kết tạo
-                  ra các thương hiệu và nước giải khát được mọi người yêu thích
-                  với nhiều sản phẩm và kích thước khác nhau, đồng thời cung cấp
-                  các giải pháp điều hành cho doanh nghiệp mang lại những ảnh
-                  hưởng đối với cuộc sống của mọi người dân, đồng và toàn thể
-                  giới. Chúng tôi tin rằng mục tiêu, tầm nhìn, sứ mệnh và các
-                  giá trị cốt lõi giúp chúng tôi trở nên khác biệt và dẫn đất
-                  cuộc hành trình thành công.
+                  và phân phối các sản phẩm của Tập đoàn Connect Work. Connect
+                  Work VIỆT NAM TỰ HÀO HÀNH TRÌNH ĐÓNG KIẾN TẠO SỰG KHOÁI TRỌNG
+                  VĂN HÓA DOANH NGHIỆP Tại Connect Work Việt Nam, chúng tôi cam
+                  kết tạo ra các thương hiệu và nước giải khát được mọi người
+                  yêu thích với nhiều sản phẩm và kích thước khác nhau, đồng
+                  thời cung cấp các giải pháp điều hành cho doanh nghiệp mang
+                  lại những ảnh hưởng đối với cuộc sống của mọi người dân, đồng
+                  và toàn thể giới. Chúng tôi tin rằng mục tiêu, tầm nhìn, sứ
+                  mệnh và các giá trị cốt lõi giúp chúng tôi trở nên khác biệt
+                  và dẫn đất cuộc hành trình thành công.
                 </p>
               </div>
             </div>
