@@ -58,34 +58,37 @@ export class NotificationController {
     }),
   )
   async createNotification(
-    @UploadedFiles() files: Express.Multer.File[], // Thay đổi từ UploadedFile sang UploadedFiles
+    @UploadedFiles() files: Express.Multer.File[],
     @Body() createNotificationDto: CreateNotificationDto,
   ) {
     try {
       let attachments = [];
 
       if (files && files.length > 0) {
-        console.log(
-          'Uploading files:',
-          files.map((file) => ({
-            filename: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-          })),
-        );
-
-        // Upload tất cả các file và lưu download links
-        const uploadPromises = files.map((file) =>
-          this.googleDriveService.uploadFile(file),
-        );
-        const uploadedFiles = await Promise.all(uploadPromises);
-        attachments = uploadedFiles.map((fileData) => fileData.downloadLink);
+        try {
+          const uploadPromises = files.map((file) =>
+            this.googleDriveService.uploadFile(file),
+          );
+          const uploadedFiles = await Promise.all(uploadPromises);
+          attachments = uploadedFiles.map((fileData) => fileData.downloadLink);
+        } catch (uploadError) {
+          console.error('File upload error:', uploadError);
+          throw new BadRequestException(
+            `File upload failed: ${uploadError.message}`,
+          );
+        }
       }
 
-      const notification = await this.notificationService.createNotification({
+      // Parse and prepare DTO
+      const parsedDto = {
         ...createNotificationDto,
+        is_pinned: createNotificationDto.is_pinned,
+        status: createNotificationDto.status || 'open',
         attachments,
-      });
+      };
+
+      const notification =
+        await this.notificationService.createNotification(parsedDto);
 
       return {
         success: true,
@@ -93,10 +96,18 @@ export class NotificationController {
         files:
           attachments.length > 0
             ? attachments.map((link) => ({ downloadLink: link }))
-            : null,
+            : [],
       };
     } catch (error) {
-      console.error('Error in createNotification:', error);
+      console.error('Error in createNotification:', {
+        message: error.message,
+        stack: error.stack,
+      });
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
       throw new BadRequestException(
         `Failed to create notification: ${error.message}`,
       );

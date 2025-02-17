@@ -53,7 +53,7 @@ export const routes = [
     page: NotificationList,
   },
   {
-    path: "/notification-list/alo",
+    path: "/notification/:id",
     page: NotificationDetail,
   },
   {

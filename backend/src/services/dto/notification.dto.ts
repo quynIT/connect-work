@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 
 export class CreateNotificationDto {
   @IsNotEmpty()
@@ -20,8 +20,7 @@ export class CreateNotificationDto {
   status?: 'open' | 'closed';
 
   @IsOptional()
-  @IsBoolean()
-  is_pinned?: boolean;
+  is_pinned?: string;
 
   @IsOptional()
   attachments?: string[];
@@ -47,8 +46,7 @@ export class UpdateNotificationDto {
   status?: 'open' | 'closed';
 
   @IsOptional()
-  @IsBoolean()
-  is_pinned?: boolean;
+  is_pinned?: string;
 
   @IsOptional()
   attachments?: string[];

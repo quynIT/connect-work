@@ -33,12 +33,14 @@ const ProjectProgress: React.FC<{ project: Project }> = ({ project }) => {
         );
         const data = await response.json();
         setTasks(data);
+
         setTotalTasks(data.length);
         setCompletedTasks(
           data.filter((task: Task) => task.status === "Done").length
         );
       } catch (error) {
         console.error("Error fetching tasks:", error);
+        console.log(tasks);
       }
     };
     fetchTasks();

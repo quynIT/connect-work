@@ -26,7 +26,7 @@ const NotificationSchema = new Schema(
       default: 'open',
     },
     is_pinned: {
-      type: Boolean,
+      type: String,
       default: false,
     },
     attachments: [
@@ -53,6 +53,6 @@ export interface Notification extends Document {
   type: 'internal' | 'urgent' | 'event' | 'policy';
   priority: 'low' | 'high';
   status: 'open' | 'closed';
-  is_pinned: boolean;
+  is_pinned: string;
   attachments?: string[];
 }
