@@ -28,6 +28,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { Notification } from "../../redux/slides/notification/notification.types";
 interface NotificationFormState {
   title: string;
   content: string;
@@ -105,11 +106,6 @@ const MgNotification: React.FC = () => {
           });
           formData.append("files", renamedFile);
         });
-      }
-
-      // Log FormData contents for debugging
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
       }
 
       const result = await dispatch(createNotification(formData)).unwrap();

@@ -20,11 +20,7 @@ import {
   selectNotificationDetailStatus,
   selectNotificationDetailError,
 } from "../../redux/slides/notification/notificationsSlice";
-interface Attachment {
-  name?: string;
-  url: string;
-  size?: string;
-}
+
 const NotificationDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
@@ -39,12 +35,10 @@ const NotificationDetail: React.FC = () => {
     }
   }, [dispatch, id]);
 
-  const getPriorityColor = (priority: "high" | "medium" | "low"): string => {
+  const getPriorityColor = (priority: "high" | "low"): string => {
     switch (priority) {
       case "high":
         return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
       case "low":
         return "bg-green-100 text-green-800";
       default:
@@ -107,11 +101,11 @@ const NotificationDetail: React.FC = () => {
         <div className="space-y-2">
           {attachments.map((attachment, index) => {
             const attachmentUrl =
-              typeof attachment === "string" ? attachment : attachment.url;
+              typeof attachment === "string" ? attachment : attachment.path;
             const attachmentName =
               typeof attachment === "string"
                 ? `Tệp đính kèm ${index + 1}`
-                : attachment.name || `Tệp đính kèm ${index + 1}`;
+                : attachment.filename || `Tệp đính kèm ${index + 1}`;
 
             return (
               <div

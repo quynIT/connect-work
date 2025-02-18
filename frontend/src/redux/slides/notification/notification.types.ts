@@ -1,5 +1,5 @@
-export type NotificationType = "normal" | "urgent";
-export type NotificationPriority = "low" | "medium" | "high";
+export type NotificationType = "internal" | "urgent" | "event" | "policy";
+export type NotificationPriority = "low" | "high";
 export type NotificationStatus = "open" | "closed";
 export type LoadingStatus = "idle" | "loading" | "succeeded" | "failed";
 
@@ -44,7 +44,7 @@ export interface NotificationDetail {
   title: string;
   content: string;
   type: "urgent" | "info" | "maintenance";
-  priority: "high" | "medium" | "low";
+  priority: "high" | "low";
   status: "open" | "closed";
   is_pinned: "true" | "false";
   created_at: string;

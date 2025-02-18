@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios, { AxiosError } from "axios";
 import {
   Notification,
-  NotificationsState,
   NotificationStatus,
   NotificationDetail,
   LoadingStatus,
@@ -131,10 +130,10 @@ export const createNotification = createAsyncThunk<
       return response.data;
     } catch (err) {
       const error = err as AxiosError;
+      const errorMessage = (error.response?.data as { message?: string })
+        ?.message;
       return rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to create notification"
+        errorMessage || error.message || "Failed to create notification"
       );
     }
   }
@@ -201,17 +200,17 @@ const notificationsSlice = createSlice({
         state.detailError =
           action.payload ?? "Failed to fetch notification detail";
       })
-      .addCase(createNotification.fulfilled, (state, action) => {
+      .addCase(createNotification.fulfilled, () => {
         // Remove this since we're now fetching fresh data
         // state.items.push(action.payload);
       })
-      .addCase(deleteNotification.fulfilled, (state, action) => {
+      .addCase(deleteNotification.fulfilled, () => {
         // Handled by fetchNotifications
       })
-      .addCase(updateNotification.fulfilled, (state, action) => {
+      .addCase(updateNotification.fulfilled, () => {
         // Handled by fetchNotifications
       })
-      .addCase(toggleNotificationStatus.fulfilled, (state, action) => {
+      .addCase(toggleNotificationStatus.fulfilled, () => {
         // Handled by fetchNotifications
       });
   },

@@ -15,7 +15,7 @@ interface Notification {
   title: string;
   content: string;
   type: "urgent" | "info" | "maintenance";
-  priority: "high" | "medium" | "low";
+  priority: "high" | "low";
   status: "open" | "closed";
   is_pinned: "true" | "false";
   attachments: string[];
@@ -56,8 +56,6 @@ const NotificationList: React.FC = () => {
     switch (priority) {
       case "high":
         return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
       case "low":
         return "bg-green-100 text-green-800";
       default:

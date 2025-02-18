@@ -362,7 +362,7 @@ export default function MgAttendance() {
                 >
                   <td className="px-4 py-3 text-sm text-gray-200">Admin</td>
                   <td className="px-4 py-3 text-sm text-gray-300">
-                    {attendance.date}
+                    {new Date(attendance.date).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-center">{presentCount}</td>
                   <td className="px-4 py-3 text-center">{absentCount}</td>
