@@ -74,37 +74,90 @@ This project is a full-stack web application built with a **NestJS** backend and
 
 ## Features
 
-### Backend (NestJS)
+### Frontend-Only Features
 
-- **Modular Architecture**: The backend is structured using NestJS modules, promoting scalability and maintainability.
-- **RESTful API**: Provides a set of RESTful endpoints for seamless communication with the frontend.
-- **Environment Configuration**: Uses `.env` files for managing environment-specific configurations.
-- **Validation and Error Handling**: Implements robust validation and error-handling mechanisms.
-- **File Uploads**: Supports file uploads, with uploaded files stored in the `uploads/` directory.
-- **Testing**: Includes unit tests for controllers and services to ensure reliability.
+These features are implemented entirely on the frontend and do not require backend interaction:
 
-### Frontend (Vite + TailwindCSS)
+- **Real-Time Chat**: Users can send and receive messages in real-time using Firebase Firestore.
+- **Kanban Board**: Drag-and-drop task management for projects.
+- **Task Filtering**: Filter tasks by deadline, status, or assigned users.
+- **Responsive Design**: Fully responsive UI for desktop and mobile devices.
+- **Notifications**: Display notifications for user actions like task updates or chat messages.
+- **File Upload Validation**: Validate file size and format before uploading (e.g., CVs, images).
 
-- **Modern Frontend Stack**: Built with Vite for fast development and optimized builds.
-- **TailwindCSS Integration**: Provides a utility-first CSS framework for rapid UI development.
-- **Responsive Design**: Ensures the application is mobile-friendly and works across various devices.
-- **Environment Configuration**: Uses `.env` files for frontend-specific configurations.
-- **Component-Based Architecture**: Promotes reusability and maintainability of UI components.
+### Backend-Integrated Features
 
-## Project Structure
+These features rely on backend APIs for data storage and processing:
 
-### Backend
+- **User Authentication**: Login, logout, and token-based authentication using JWT.
+- **Recruitment Management**:
+  - Job postings with descriptions, deadlines, and attachments.
+  - Application submission with CV uploads.
+- **Project Management**:
+  - Create, update, and delete projects.
+  - Assign members to projects.
+- **Attendance Management**:
+  - Record attendance for employees.
+  - Approve or reject leave requests.
+- **Payroll Management**:
+  - Calculate and display monthly salaries.
+  - Generate payroll reports.
+- **Admin Dashboard**:
+  - Manage users, projects, and recruitment processes.
+  - View detailed CVs and evaluate candidates.
+- **Chat Room Management**:
+  - Create chat rooms and manage members.
+  - Upload and share images in chat.
 
-- **Configuration Files**: Includes `.env`, `.eslintrc.js`, `.prettierrc`, and `tsconfig.json` for environment setup, linting, formatting, and TypeScript configuration.
-- **Source Code**: Located in the `backend/src/` directory, with controllers, services, and modules.
-- **Testing**: Tests are located in the `backend/test/` directory.
-- **Uploads**: Uploaded files are stored in the `backend/uploads/` directory.
+---
+
+## Technologies Used
 
 ### Frontend
 
-- **Configuration Files**: Includes `vite.config.ts`, `tailwind.config.js`, and `tsconfig.json` for build, styling, and TypeScript configuration.
-- **Source Code**: Located in the `frontend/src/` directory, containing components, pages, and assets.
-- **Public Assets**: Static files are stored in the `frontend/public/` directory.
+- **React**: For building the user interface.
+- **TypeScript**: For type-safe development.
+- **Tailwind CSS**: For styling and responsive design.
+- **Firebase**:
+  - Firestore: Real-time database for chat and notifications.
+  - Storage: For storing uploaded files like images and documents.
+- **TinyMCE**: Rich text editor for job descriptions and task details.
+- **React Router**: For navigation and routing.
+
+### Backend
+
+- **Node.js**: Backend runtime environment.
+- **Express.js**: Web framework for building RESTful APIs.
+- **MongoDB**: Database for storing user, project, and task data.
+- **JWT**: For secure authentication and authorization.
+- **Axios**: For making HTTP requests from the frontend.
+
+### DevOps
+
+- **Vite**: For fast development and build processes.
+- **Postman**: For API testing and documentation.
+- **Git**: Version control system for collaboration.
+
+---
+
+## How It Works
+
+### User Flow
+
+1. **Login**: Users authenticate using their email and password.
+2. **Dashboard**: Users access their personalized dashboard based on their role (Admin/User).
+3. **Recruitment**:
+   - Admins post job listings.
+   - Users apply for jobs by uploading their CVs.
+4. **Project Management**:
+   - Admins create projects and assign members.
+   - Users manage tasks using the Kanban board.
+5. **Chat**:
+   - Users communicate in real-time via chat rooms.
+   - Images and files can be shared in chat.
+6. **Attendance**:
+   - Admins manage attendance records and leave requests.
+   - Employees submit leave requests for approval.
 
 ## Getting Started
 
@@ -130,3 +183,11 @@ Contributions are welcome! Please follow the coding standards and guidelines out
 ## License
 
 This project is licensed under the MIT License.
+
+<h2 align="center">🔒 Please note that this is a demo project 🔒</h2>
+
+<p align="center">
+  For confidentiality reasons, only part of the source code is shared.<br/>
+  👉 <a href="https://connectwork.vercel.app/">Live Demo: connectwork.vercel.app</a><br/>
+  📞 Contact: 0329903471
+</p>
