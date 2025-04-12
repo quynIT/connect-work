@@ -1,4 +1,72 @@
-# Project Overview
+# Overview of AI
+
+# Research and Development of an Enterprise Management System Utilizing RAG Model for Internal Document Analysis and Retrieval
+
+## Overview
+
+This project focuses on researching and developing an enterprise management system that leverages the Retrieval-Augmented Generation (RAG) model to analyze and retrieve internal documents efficiently. The system is designed to assist users in querying and understanding legal and administrative documents, providing intelligent responses and document insights.
+
+## Features
+
+### 1. **Document Processing**
+
+- Extracts metadata, keywords, and penalties from uploaded documents.
+- Cleans and normalizes Vietnamese text for better processing.
+- Splits documents into manageable chunks for efficient analysis.
+- **Technology**: Python, `re` (Regular Expressions), `tqdm`.
+
+### 2. **Legal Document Analysis**
+
+- Detects document sections such as penalties, definitions, and procedures.
+- Extracts legal references and highlights important legal terms.
+- **Technology**: Python, `re` (Regular Expressions).
+
+### 3. **Chatbot Interface**
+
+- Provides an interactive chat interface for querying documents.
+- Suggests questions based on document content.
+- Displays chat history and allows users to manage conversations.
+- **Technology**: Streamlit.
+
+### 4. **Natural Language Processing**
+
+- Utilizes a Large Language Model (LLM) to generate intelligent responses.
+- Enhances responses with professional formatting and highlights key points.
+- **Technology**: Google Generative AI (Gemini 1.5 Pro), LangChain.
+
+### 5. **Vector Search**
+
+- Implements vector-based similarity search for document retrieval.
+- Integrates FAISS for efficient document indexing and querying.
+- **Technology**: FAISS.
+
+### 6. **Caching and Optimization**
+
+- Caches extracted keywords, section types, and processed chunks for faster performance.
+- **Technology**: Python `functools.lru_cache`.
+
+### 7. **Document Management**
+
+- Supports uploading and processing `.docx` and `.pdf` files.
+- Displays processed document metadata, such as title, type, page count, and upload date.
+- **Technology**: `docx2txt`, `pypdf`.
+
+### 8. **Environment Configuration**
+
+- Loads environment variables for secure API key management.
+- **Technology**: `python-dotenv`.
+
+### 9. **Customizable Prompt Templates**
+
+- Generates structured prompts for legal document analysis.
+- **Technology**: LangChain `PromptTemplate`.
+
+### 10. **Interactive Sidebar**
+
+- Displays processed documents and allows users to reload or clear data.
+- **Technology**: Streamlit.
+
+# Overview of the website
 
 ## Introduction
 
