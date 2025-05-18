@@ -1,0 +1,9 @@
+pip install streamlit==1.32.2
+pip install python-dotenv==1.0.1
+pip install langchain==0.1.14
+pip install langchain-community==0.0.30
+pip install langchain-google-genai==0.0.8
+pip install langchain==0.1.14
+pip install pypdf==4.1.0
+pip install docx2txt==1.0
+pip install faiss-cpu==1.8.0` 
